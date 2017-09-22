@@ -25,8 +25,8 @@ func ECPrivateKeyGenerator() (crypto.PrivateKey, error) {
 	return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 }
 
-// RSArivateKeyGenerator generates a RSA private key.
-func RSArivateKeyGenerator() (crypto.PrivateKey, error) {
+// RSAPrivateKeyGenerator generates a RSA private key.
+func RSAPrivateKeyGenerator() (crypto.PrivateKey, error) {
 	return rsa.GenerateKey(rand.Reader, 2048)
 }
 
@@ -50,7 +50,7 @@ func KeyToPEM(key interface{}) (*pem.Block, error) {
 		t = "RSA PRIVATE KEY"
 
 	default:
-		return nil, fmt.Errorf("Given key is not ECDSA")
+		return nil, fmt.Errorf("Given key is not compatible")
 	}
 
 	return &pem.Block{
@@ -63,6 +63,7 @@ func KeyToPEM(key interface{}) (*pem.Block, error) {
 // and the given keyGen.
 func IssueCertiticate(
 	signingCertificate *x509.Certificate,
+	signingPrivateKey crypto.PrivateKey,
 	keyGen PrivateKeyGenerator,
 
 	countries []string,
@@ -91,6 +92,25 @@ func IssueCertiticate(
 	if err != nil {
 		return nil, nil, err
 	}
+	sid, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	priv, err := keyGen()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var pub crypto.PublicKey
+	switch k := priv.(type) {
+	case *ecdsa.PrivateKey:
+		pub = k.Public()
+	case *rsa.PrivateKey:
+		pub = k.Public()
+	default:
+		return nil, nil, fmt.Errorf("Unsupported private key")
+	}
 
 	x509Cert := &x509.Certificate{
 		SerialNumber: sn,
@@ -104,44 +124,37 @@ func IssueCertiticate(
 			OrganizationalUnit: organizationalUnits,
 			CommonName:         commonName,
 		},
-		SignatureAlgorithm:    signatureAlgorithm,
-		PublicKeyAlgorithm:    publicKeyAlgorithm,
-		NotBefore:             begining,
-		NotAfter:              expiration,
 		BasicConstraintsValid: true,
-		IsCA:        isCA,
-		KeyUsage:    keyUsage,
-		ExtKeyUsage: extKeyUsage,
-		DNSNames:    dnsNames,
-		IPAddresses: ipAddresses,
+		DNSNames:              dnsNames,
+		ExtKeyUsage:           extKeyUsage,
+		IPAddresses:           ipAddresses,
+		IsCA:                  isCA,
+		KeyUsage:              keyUsage,
+		NotAfter:              expiration,
+		NotBefore:             begining,
+		PublicKeyAlgorithm:    publicKeyAlgorithm,
+		SubjectKeyId:          sid.Bytes(),
 	}
 
 	if err != nil {
 		return nil, nil, err
 	}
 
-	priv, err := keyGen()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	var pub crypto.PublicKey
-
-	switch k := priv.(type) {
-	case *ecdsa.PrivateKey:
-		pub = k.Public()
-	case *rsa.PrivateKey:
-		pub = k.Public()
-	default:
-		return nil, nil, fmt.Errorf("Unsupported private key")
-	}
-
-	signer := x509Cert
+	signerCert := x509Cert
+	signerKey := priv
 	if signingCertificate != nil {
-		signer = signingCertificate
+
+		if signingCertificate.KeyUsage&x509.KeyUsageCertSign == 0 {
+			return nil, nil, fmt.Errorf("The given parent certificate cannot be used to sign certificates")
+		}
+
+		signerCert = signingCertificate
+		signerKey = signingPrivateKey
 	}
 
-	asn1Data, err := x509.CreateCertificate(rand.Reader, x509Cert, signer, pub, priv)
+	x509Cert.AuthorityKeyId = signerCert.SubjectKeyId
+
+	asn1Data, err := x509.CreateCertificate(rand.Reader, x509Cert, signerCert, pub, signerKey)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -161,11 +174,11 @@ func IssueCertiticate(
 
 // ReadCertificatePEM returns a new *x509.Certificate from the path of a cert, a key in PEM
 // and decrypts it with the given password if needed.
-func ReadCertificatePEM(certPath, keyPath, password string) (*x509.Certificate, error) {
+func ReadCertificatePEM(certPath, keyPath, password string) (*x509.Certificate, crypto.PrivateKey, error) {
 
 	certPemBytes, err := ioutil.ReadFile(certPath)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	certBlock, rest := pem.Decode(certPemBytes)
 	for {
@@ -176,20 +189,20 @@ func ReadCertificatePEM(certPath, keyPath, password string) (*x509.Certificate, 
 	}
 
 	if certBlock == nil {
-		return nil, fmt.Errorf("Could not read cert data")
+		return nil, nil, fmt.Errorf("Could not read cert data")
 	}
 
 	keyPemBytes, err := ioutil.ReadFile(keyPath)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	keyBlock, rest := pem.Decode(keyPemBytes)
 	if len(rest) > 0 {
-		return nil, fmt.Errorf("Multiple private keys found. This is not supported")
+		return nil, nil, fmt.Errorf("Multiple private keys found. This is not supported")
 	}
 	if keyBlock == nil {
-		return nil, fmt.Errorf("Could not read key data")
+		return nil, nil, fmt.Errorf("Could not read key data")
 	}
 
 	if x509.IsEncryptedPEMBlock(keyBlock) {
@@ -197,7 +210,7 @@ func ReadCertificatePEM(certPath, keyPath, password string) (*x509.Certificate, 
 		var data []byte
 		data, err = x509.DecryptPEMBlock(keyBlock, []byte(password))
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		keyBlock = &pem.Block{
@@ -208,13 +221,29 @@ func ReadCertificatePEM(certPath, keyPath, password string) (*x509.Certificate, 
 
 	cert, err := tls.X509KeyPair(pem.EncodeToMemory(certBlock), pem.EncodeToMemory(keyBlock))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	x509cert, err := x509.ParseCertificate(cert.Certificate[0])
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return x509cert, nil
+	var key crypto.PrivateKey
+	switch keyBlock.Type {
+	case "EC PRIVATE KEY":
+		key, err = x509.ParseECPrivateKey(keyBlock.Bytes)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to unmarshal the private key: %s", err)
+		}
+	case "RSA PRIVATE KEY":
+		key, err = x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to unmarshal the private key: %s", err)
+		}
+	default:
+		return nil, nil, fmt.Errorf("Unsuported private key type: %s", keyBlock.Type)
+	}
+
+	return x509cert, key, nil
 }

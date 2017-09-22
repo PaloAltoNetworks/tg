@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto"
 	"crypto/rand"
 	"crypto/x509"
 	"encoding/pem"
@@ -90,24 +91,30 @@ func main() {
 		signalg = x509.ECDSAWithSHA384
 		pkalg = x509.ECDSA
 	case "rsa":
-		keygen = tglib.RSArivateKeyGenerator
-		signalg = x509.SHA512WithRSA
+		keygen = tglib.RSAPrivateKeyGenerator
+		signalg = x509.SHA384WithRSA
 		pkalg = x509.RSA
 	}
 
 	var keyUsage x509.KeyUsage
 	var extKeyUsage []x509.ExtKeyUsage
 	if viper.GetBool("is-ca") {
-		keyUsage = x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign
+		keyUsage = x509.KeyUsageCRLSign | x509.KeyUsageCertSign
+	} else {
+		keyUsage = x509.KeyUsageDigitalSignature
 	}
+
 	if viper.GetBool("auth-client") {
+		keyUsage |= x509.KeyUsageDigitalSignature
 		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageClientAuth)
 	}
 	if viper.GetBool("auth-server") {
+		keyUsage |= x509.KeyUsageKeyEncipherment
 		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageServerAuth)
 	}
 
 	var signingCert *x509.Certificate
+	var signingKey crypto.PrivateKey
 	signingCertPath := viper.GetString("signing-cert")
 	signingCertKeyPath := viper.GetString("signing-cert-key")
 
@@ -117,7 +124,7 @@ func main() {
 			logrus.Fatal("you must pass both --signing-cert and --signing-cert-key if you pass one or the other")
 		}
 
-		signingCert, err = tglib.ReadCertificatePEM(signingCertPath, signingCertKeyPath, viper.GetString("signing-cert-key-pass"))
+		signingCert, signingKey, err = tglib.ReadCertificatePEM(signingCertPath, signingCertKeyPath, viper.GetString("signing-cert-key-pass"))
 		if err != nil {
 			logrus.WithError(err).Fatal("unable to read signing certiticate information")
 		}
@@ -130,6 +137,7 @@ func main() {
 
 	priv, pub, err := tglib.IssueCertiticate(
 		signingCert,
+		signingKey,
 		keygen,
 		viper.GetStringSlice("country"),
 		viper.GetStringSlice("state"),
@@ -178,7 +186,7 @@ func main() {
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"cert": certOut,
-		"key":  keyOut,
-	}).Info("certificate created")
+		"cert": viper.GetString("name") + "-cert.pem",
+		"key":  viper.GetString("name") + "-key.pem",
+	}).Info("X509 certificate key pair created")
 }
