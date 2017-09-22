@@ -6,14 +6,13 @@ import (
 	"encoding/pem"
 	"io/ioutil"
 	"net"
+	"os"
 	"path"
 	"strings"
 	"time"
 
-	"go.uber.org/zap"
-
-	"github.com/aporeto-inc/addedeffect/logutils"
 	"github.com/aporeto-inc/tg/tglib"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
@@ -22,14 +21,13 @@ func main() {
 
 	var err error
 
-	logutils.Configure("info", "console")
-
 	pflag.String("out", "./", "Path to the directtory where the certificate files will be written.")
+	pflag.Bool("force", false, "Overwrite the certificate if it already exists.")
 	pflag.String("name", "", "Base name of the certificate.")
 
 	pflag.StringSlice("org", nil, "List of organizations that will be written in the certificate subject.")
 	pflag.StringSlice("org-unit", nil, "List of organizational units that will be written in the certificate subject.")
-	pflag.StringSlice("common-name", nil, "Common name that will be written in the certificate subject.")
+	pflag.String("common-name", "", "Common name that will be written in the certificate subject.")
 	pflag.StringSlice("country", nil, "Country that will be written the the subject.")
 	pflag.StringSlice("state", nil, "State that will be written the the subject.")
 	pflag.StringSlice("city", nil, "City that will be written the the subject.")
@@ -53,7 +51,7 @@ func main() {
 	pflag.Parse()
 
 	if err = viper.BindPFlags(pflag.CommandLine); err != nil {
-		zap.L().Fatal("Unable to bind flags", zap.Error(err))
+		logrus.WithError(err).Fatal("unable to bind flags")
 	}
 
 	viper.SetEnvPrefix("tlsgen")
@@ -61,11 +59,25 @@ func main() {
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
 	if viper.GetString("name") == "" {
-		zap.L().Fatal("You must specify a name via --name.")
+		logrus.Fatal("you must specify a name via --name")
+	}
+
+	if viper.GetString("common-name") == "" {
+		viper.Set("common-name", viper.GetString("name"))
 	}
 
 	if !viper.GetBool("is-ca") && !viper.GetBool("auth-server") && !viper.GetBool("auth-client") {
-		zap.L().Fatal("You must set at least one of --auth-server or --auth-client.")
+		logrus.Fatal("you must set at least one of --auth-server or --auth-client")
+	}
+
+	certOut := path.Join(viper.GetString("out"), viper.GetString("name")+"-cert.pem")
+	keyOut := path.Join(viper.GetString("out"), viper.GetString("name")+"-key.pem")
+
+	if _, err = os.Stat(certOut); !os.IsNotExist(err) && !viper.GetBool("force") {
+		logrus.WithField("path", certOut).Fatal("destination file already exists. Use --force to overwrite")
+	}
+	if _, err = os.Stat(keyOut); !os.IsNotExist(err) && !viper.GetBool("force") {
+		logrus.WithField("path", certOut).Fatal("destination file already exists. Use --force to overwrite")
 	}
 
 	var keygen tglib.PrivateKeyGenerator
@@ -102,12 +114,12 @@ func main() {
 	if signingCertPath != "" || signingCertKeyPath != "" {
 
 		if signingCertPath == "" || signingCertKeyPath == "" {
-			zap.L().Fatal("You must pass both --signing-cert and --signing-cert-key if you pass one or the other.")
+			logrus.Fatal("you must pass both --signing-cert and --signing-cert-key if you pass one or the other")
 		}
 
 		signingCert, err = tglib.ReadCertificatePEM(signingCertPath, signingCertKeyPath, viper.GetString("signing-cert-key-pass"))
 		if err != nil {
-			zap.L().Fatal("Unable to read signing certiticate information", zap.Error(err))
+			logrus.WithError(err).Fatal("unable to read signing certiticate information")
 		}
 	}
 
@@ -139,30 +151,34 @@ func main() {
 	)
 
 	if err != nil {
-		zap.L().Fatal("Unable to generate certificate", zap.Error(err))
+		logrus.WithError(err).Fatal("unable to generate certificate")
 	}
 
 	if pass := viper.GetString("pass"); pass != "" {
 		priv, err = x509.EncryptPEMBlock(rand.Reader, priv.Type, priv.Bytes, []byte(pass), x509.PEMCipherAES256)
 		if err != nil {
-			zap.L().Fatal("Unable to encrypt private key", zap.Error(err))
+			logrus.WithError(err).Fatal("unable to encrypt private key")
 		}
 	}
 
 	if err := ioutil.WriteFile(
-		path.Join(viper.GetString("out"), viper.GetString("name")+"-key.pem"),
+		keyOut,
 		pem.EncodeToMemory(priv),
 		0644,
 	); err != nil {
-		zap.L().Fatal("Unable to write private key on file", zap.Error(err))
+		logrus.WithError(err).Fatal("unable to write private key on file")
 	}
 
 	if err := ioutil.WriteFile(
-		path.Join(viper.GetString("out"), viper.GetString("name")+"-cert.pem"),
+		certOut,
 		pem.EncodeToMemory(pub),
 		0644,
 	); err != nil {
-		zap.L().Fatal("Unable to write public key on file", zap.Error(err))
+		logrus.WithError(err).Fatal("unable to write public key on file")
 	}
 
+	logrus.WithFields(logrus.Fields{
+		"cert": certOut,
+		"key":  keyOut,
+	}).Info("certificate created")
 }

@@ -59,10 +59,10 @@ func KeyToPEM(key interface{}) (*pem.Block, error) {
 	}, nil
 }
 
-// IssueCertiticate issues a new Certificate eventual signed using the signingCerticate
+// IssueCertiticate issues a new Certificate eventual signed using the signingCertificate
 // and the given keyGen.
 func IssueCertiticate(
-	signingCerticate *x509.Certificate,
+	signingCertificate *x509.Certificate,
 	keyGen PrivateKeyGenerator,
 
 	countries []string,
@@ -87,14 +87,13 @@ func IssueCertiticate(
 
 ) (*pem.Block, *pem.Block, error) {
 
-	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
-	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
+	sn, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	x509CA := &x509.Certificate{
-		SerialNumber: serialNumber,
+	x509Cert := &x509.Certificate{
+		SerialNumber: sn,
 		Subject: pkix.Name{
 			Country:            countries,
 			Locality:           localities,
@@ -137,12 +136,12 @@ func IssueCertiticate(
 		return nil, nil, fmt.Errorf("Unsupported private key")
 	}
 
-	signer := x509CA
-	if signingCerticate != nil {
-		signer = signingCerticate
+	signer := x509Cert
+	if signingCertificate != nil {
+		signer = signingCertificate
 	}
 
-	asn1Data, err := x509.CreateCertificate(rand.Reader, x509CA, signer, pub, priv)
+	asn1Data, err := x509.CreateCertificate(rand.Reader, x509Cert, signer, pub, priv)
 	if err != nil {
 		return nil, nil, err
 	}
