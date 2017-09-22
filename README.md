@@ -1,6 +1,6 @@
 # tg
 
-tg (short for tlsgen, and also a french pun) makes issueing certificate easy. It only used the standard golang crypto lib.
+tg (short for tlsgen, and also a french pun) makes issuing certificates easy. It only used the standard golang crypto lib.
 
 ## Install
 
