@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net"
 	"path"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -51,13 +52,13 @@ func main() {
 
 	pflag.Parse()
 
-	if err = viper.BindEnv("tlsgen"); err != nil {
-		zap.L().Fatal("Unable to bind env", zap.Error(err))
-	}
-
 	if err = viper.BindPFlags(pflag.CommandLine); err != nil {
 		zap.L().Fatal("Unable to bind flags", zap.Error(err))
 	}
+
+	viper.SetEnvPrefix("tlsgen")
+	viper.AutomaticEnv()
+	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
 	if viper.GetString("name") == "" {
 		zap.L().Fatal("You must specify a name via --name.")
