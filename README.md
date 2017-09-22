@@ -28,4 +28,4 @@ Lot's of additional options:
 
     $ tg -h
 
-> NOTE: all parameters can be given using env variables. Prefix the argument with `TLSGEN_`. for instance `TLSGEN_SIGNING_OUT` for setting output dir.
+> NOTE: all parameters can be given using env variables. Prefix the argument with `TLSGEN_`. for instance `TLSGEN_OUT` for setting output dir.
