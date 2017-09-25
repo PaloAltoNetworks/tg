@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 	"math/big"
 	"net"
+	"os/exec"
 	"time"
 )
 
@@ -246,4 +247,20 @@ func ReadCertificatePEM(certPath, keyPath, password string) (*x509.Certificate, 
 	}
 
 	return x509cert, key, nil
+}
+
+// GeneratePKCS12 generates a full PKCS certificate based on the input keys.
+func GeneratePKCS12(out, certPath, keyPath, caPath, passphrase string) error {
+
+	args := []string{
+		"pkcs12",
+		"-export",
+		"-out", out,
+		"-inkey", keyPath,
+		"-in", certPath,
+		"-certfile", caPath,
+		"-passout", "pass:" + passphrase,
+	}
+
+	return exec.Command("openssl", args...).Run()
 }

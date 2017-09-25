@@ -34,6 +34,8 @@ func main() {
 	pflag.StringSlice("city", nil, "City that will be written the the subject.")
 	pflag.StringSlice("zip-code", nil, "City that will be written the the subject.")
 	pflag.StringSlice("address", nil, "Address that will be written the the subject.")
+	pflag.Bool("p12", false, "If set, a p12 will also be generated. This needs openssl binary to be installed on your machine.")
+	pflag.String("p12-pass", "", "Set the p12 passphrase. Only works when --p12 is set.")
 
 	pflag.StringSlice("dns", nil, "List of alternate DNS names.")
 	pflag.StringSlice("ip", nil, "List of alternate ips.")
@@ -69,6 +71,10 @@ func main() {
 
 	if !viper.GetBool("is-ca") && !viper.GetBool("auth-server") && !viper.GetBool("auth-client") {
 		logrus.Fatal("you must set at least one of --auth-server or --auth-client")
+	}
+
+	if viper.GetBool("p12") && viper.GetString("p12-pass") == "" {
+		logrus.Fatal("you must set --p12-pass when setting --p12")
 	}
 
 	certOut := path.Join(viper.GetString("out"), viper.GetString("name")+"-cert.pem")
@@ -169,7 +175,7 @@ func main() {
 		}
 	}
 
-	if err := ioutil.WriteFile(
+	if err = ioutil.WriteFile(
 		keyOut,
 		pem.EncodeToMemory(priv),
 		0644,
@@ -177,12 +183,24 @@ func main() {
 		logrus.WithError(err).Fatal("unable to write private key on file")
 	}
 
-	if err := ioutil.WriteFile(
+	if err = ioutil.WriteFile(
 		certOut,
 		pem.EncodeToMemory(pub),
 		0644,
 	); err != nil {
 		logrus.WithError(err).Fatal("unable to write public key on file")
+	}
+
+	if viper.GetBool("p12") {
+		if err = tglib.GeneratePKCS12(
+			path.Join(viper.GetString("out"), viper.GetString("name")+".p12"),
+			certOut,
+			keyOut,
+			signingCertPath,
+			viper.GetString("p12-pass"),
+		); err != nil {
+			logrus.WithError(err).Fatal("unable to write p12 on file")
+		}
 	}
 
 	logrus.WithFields(logrus.Fields{
