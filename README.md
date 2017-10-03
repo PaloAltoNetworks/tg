@@ -4,21 +4,21 @@ tg (short for tlsgen, and also a french pun) makes issuing certificates easy. It
 
 ## Install
 
-    $ go get -u github.com/aporeto-inc/tg
+    go get -u github.com/aporeto-inc/tg
 
 ## Examples
 
 To generate a self signed certificate server certificate:
 
-    $ tg --name mycert --org acme --common-name john --auth-server
+    tg --name mycert --org acme --common-name john --auth-server
 
 To generate a CA:
 
-    $ tg --name myca --org acme --common-name root --is-ca --pass secret
+    tg --name myca --org acme --common-name root --is-ca --pass secret
 
 To issue a client certificate from a CA:
 
-    $ tg --name myclient --org acme --common-name client
+    tg --name myclient --org acme --common-name client
         --auth-client \
         --signing-cert myca-cert.pem \
         --signing-cert-key myca-key.pem \
@@ -26,6 +26,6 @@ To issue a client certificate from a CA:
 
 Lot's of additional options:
 
-    $ tg -h
+    tg -h
 
 > NOTE: all parameters can be given using env variables. Prefix the argument with `TLSGEN_`. for instance `TLSGEN_OUT` for setting output dir.

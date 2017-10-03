@@ -9,6 +9,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/asn1"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
@@ -16,6 +17,8 @@ import (
 	"net"
 	"os/exec"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 // PrivateKeyGenerator is the type of function that can generate a crypto.PrivateKey.
@@ -87,6 +90,8 @@ func IssueCertiticate(
 	publicKeyAlgorithm x509.PublicKeyAlgorithm,
 	isCA bool,
 
+	policies []asn1.ObjectIdentifier,
+
 ) (*pem.Block, *pem.Block, error) {
 
 	sn, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
@@ -135,6 +140,7 @@ func IssueCertiticate(
 		NotBefore:             begining,
 		PublicKeyAlgorithm:    publicKeyAlgorithm,
 		SubjectKeyId:          sid.Bytes(),
+		PolicyIdentifiers:     policies,
 	}
 
 	if err != nil {
@@ -146,7 +152,7 @@ func IssueCertiticate(
 	if signingCertificate != nil {
 
 		if signingCertificate.KeyUsage&x509.KeyUsageCertSign == 0 {
-			return nil, nil, fmt.Errorf("The given parent certificate cannot be used to sign certificates")
+			logrus.Warn("The given parent certificate should be used to sign certificates as it doesn't have correct key usage")
 		}
 
 		signerCert = signingCertificate
