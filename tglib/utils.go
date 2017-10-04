@@ -264,3 +264,24 @@ func GeneratePKCS12(out, certPath, keyPath, caPath, passphrase string) error {
 
 	return exec.Command("openssl", args...).Run()
 }
+
+// ReadCertificatePEMFromData returns a certificate object out of a PEM encoded byte array
+func ReadCertificatePEMFromData(certByte []byte) (*x509.Certificate, error) {
+	certBlock, rest := pem.Decode(certByte)
+	for {
+		if len(rest) == 0 {
+			break
+		}
+		certBlock, rest = pem.Decode(rest)
+	}
+	if certBlock == nil {
+		return nil, fmt.Errorf("Could not read cert data")
+	}
+
+	cert, err := x509.ParseCertificate(certBlock.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse certificate: %s", err.Error())
+	}
+
+	return cert, nil
+}
