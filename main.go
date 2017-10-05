@@ -4,11 +4,13 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/x509"
+	"encoding/asn1"
 	"encoding/pem"
 	"io/ioutil"
 	"net"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
@@ -50,6 +52,8 @@ func main() {
 	pflag.String("signing-cert", "", "Path to the signing certificate.")
 	pflag.String("signing-cert-key", "", "Path to the signing certificate key.")
 	pflag.String("signing-cert-key-pass", "", "PathPassword to decrypt the signing certificate key.")
+
+	pflag.StringSlice("policy", nil, "Additonal policy extensions in the form --policy <OID>. Note that 1.3.6.1.4.1 is automatically added. Just start with your PEN number.")
 
 	pflag.Parse()
 
@@ -141,6 +145,22 @@ func main() {
 		ips = append(ips, net.ParseIP(ip))
 	}
 
+	var policies []asn1.ObjectIdentifier
+	for _, kv := range viper.GetStringSlice("policy") {
+		parts := strings.Split(kv, ".")
+
+		oid := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1}
+		for _, part := range parts {
+			i, e := strconv.Atoi(part)
+			if e != nil {
+				logrus.WithField("oid", kv).Fatal("Given policy OID is invalid")
+			}
+			oid = append(oid, i)
+		}
+
+		policies = append(policies, oid)
+	}
+
 	priv, pub, err := tglib.IssueCertiticate(
 		signingCert,
 		signingKey,
@@ -162,6 +182,7 @@ func main() {
 		signalg,
 		pkalg,
 		viper.GetBool("is-ca"),
+		policies,
 	)
 
 	if err != nil {
