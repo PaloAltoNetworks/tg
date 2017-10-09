@@ -292,22 +292,23 @@ func ReadCertificatePEMFromData(certByte []byte) (*x509.Certificate, error) {
 	return cert, nil
 }
 
-// LoadCSR loads the given bytes as a Certificate Signing Request.
-func LoadCSR(csrData []byte) (*x509.CertificateRequest, error) {
+// LoadCSRs loads the given bytes as an array of Certificate Signing Request.
+func LoadCSRs(csrData []byte) ([]*x509.CertificateRequest, error) {
+	csrs := []*x509.CertificateRequest{}
 
-	block, _ := pem.Decode(csrData)
-	if block == nil {
-		return nil, fmt.Errorf("Given CSR is not a valid PEM")
+	var block *pem.Block
+	block, csrData = pem.Decode(csrData)
+
+	for ; block != nil; block, csrData = pem.Decode(csrData) {
+		csr, err := x509.ParseCertificateRequest(block.Bytes)
+		if err != nil {
+			return nil, err
+		}
+		if err := csr.CheckSignature(); err != nil {
+			return nil, err
+		}
+		csrs = append(csrs, csr)
 	}
 
-	csr, err := x509.ParseCertificateRequest(block.Bytes)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := csr.CheckSignature(); err != nil {
-		return nil, err
-	}
-
-	return csr, nil
+	return csrs, nil
 }
