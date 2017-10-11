@@ -75,8 +75,8 @@ func SignCSR(
 	signatureAlgorithm x509.SignatureAlgorithm,
 	publicKeyAlgorithm x509.PublicKeyAlgorithm,
 
+	isCA bool,
 	policies []asn1.ObjectIdentifier,
-
 ) (*pem.Block, error) {
 
 	sn, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
@@ -111,6 +111,7 @@ func SignCSR(
 		PublicKeyAlgorithm:    publicKeyAlgorithm,
 		SubjectKeyId:          sid.Bytes(),
 		PolicyIdentifiers:     policies,
+		IsCA:                  isCA,
 	}
 
 	signerCert := x509Cert

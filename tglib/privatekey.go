@@ -75,3 +75,17 @@ func DecryptPrivateKeyPEM(key []byte, password string) (*pem.Block, error) {
 
 	return DecryptPrivateKey(keyBlock, password)
 }
+
+// EncryptPrivateKey encrypts the given private key
+func EncryptPrivateKey(keyBlock *pem.Block, password string) (*pem.Block, error) {
+
+	return x509.EncryptPEMBlock(rand.Reader, keyBlock.Type, keyBlock.Bytes, []byte(password), x509.PEMCipherAES256)
+}
+
+// EncryptPrivateKeyPEM encrypts the given private key PEM bytes
+func EncryptPrivateKeyPEM(key []byte, password string) (*pem.Block, error) {
+
+	keyBlock, _ := pem.Decode(key)
+
+	return EncryptPrivateKey(keyBlock, password)
+}

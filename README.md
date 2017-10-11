@@ -11,13 +11,12 @@ tg (short for tlsgen, and also a french pun) makes issuing certificates easy. It
 To generate a self signed certificate server certificate:
 
     % tg cert --name mycert --org acme --common-name john --auth-server
-    INFO[0000] X509 certificate key pair created             cert=mycert-cert.pem key=mycert-key.pem
+    INFO[0000] certificate key pair created             cert=mycert-cert.pem key=mycert-key.pem
 
 To generate a CA:
 
     % tg cert --name myca --org acme --common-name root --is-ca --pass secret
-    INFO[0000] X509 certificate key pair created             cert=myca-cert.pem key=myca-key.pem
-
+    INFO[0000] certificate key pair created             cert=myca-cert.pem key=myca-key.pem
 
 To issue a client certificate from a CA:
 
@@ -26,8 +25,12 @@ To issue a client certificate from a CA:
         --signing-cert myca-cert.pem \
         --signing-cert-key myca-key.pem \
         --signing-cert-key-pass secret
-    INFO[0000] X509 certificate key pair created             cert=myclient-cert.pem key=myclient-key.pem
+    INFO[0000] certificate key pair created             cert=myclient-cert.pem key=myclient-key.pem
 
+To verify a certificate:
+
+    % tg verify --cert myclient-cert.pem --signer myca-cert.pem
+    INFO[0000] certificate verified
 
 To generate a CSR and a private key:
 

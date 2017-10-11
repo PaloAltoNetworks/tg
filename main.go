@@ -2,11 +2,11 @@ package main
 
 import (
 	"crypto"
-	"crypto/rand"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/asn1"
 	"encoding/pem"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
@@ -25,6 +25,18 @@ const (
 	algoECDSA = "ecdsa"
 	algoRSA   = "rsa"
 )
+
+func addOutputFlags(cmd *cobra.Command) {
+	cmd.Flags().String("out", "./", "Path to the directtory where the certificate files will be written.")
+	cmd.Flags().Bool("force", false, "Overwrite the certificate if it already exists.")
+	cmd.Flags().String("name", "", "Base name of the certificate.")
+	cmd.Flags().String("algo", "ecdsa", "Signature algorithm to use. Can be rsa or ecdsa.")
+}
+
+func addUsageFlags(cmd *cobra.Command) {
+	cmd.Flags().Bool("auth-server", false, "If set, the issued certificate can be used for server authentication.")
+	cmd.Flags().Bool("auth-client", false, "If set, the issued certificate can be used for client authentication.")
+}
 
 func addPKIXFlags(cmd *cobra.Command) {
 	cmd.Flags().StringSlice("org", nil, "List of organizations that will be written in the certificate subject.")
@@ -45,8 +57,6 @@ func addSigningFlags(cmd *cobra.Command) {
 	cmd.Flags().String("signing-cert-key-pass", "", "PathPassword to decrypt the signing certificate key.")
 	cmd.Flags().StringSlice("policy", nil, "Additional policy extensions in the form --policy <OID>. Note that 1.3.6.1.4.1 is automatically added. Just start with your PEN number.")
 	cmd.Flags().Duration("validity", 86400*time.Hour, "Duration of the validity of the certificate.")
-	cmd.Flags().Bool("auth-server", false, "If set, the issued certificate can be used for server authentication.")
-	cmd.Flags().Bool("auth-client", false, "If set, the issued certificate can be used for client authentication.")
 }
 
 func main() {
@@ -60,10 +70,6 @@ func main() {
 	var rootCmd = &cobra.Command{
 		Use: "tg",
 	}
-	rootCmd.PersistentFlags().String("out", "./", "Path to the directtory where the certificate files will be written.")
-	rootCmd.PersistentFlags().Bool("force", false, "Overwrite the certificate if it already exists.")
-	rootCmd.PersistentFlags().String("name", "", "Base name of the certificate.")
-	rootCmd.PersistentFlags().String("algo", "ecdsa", "Signature algorithm to use. Can be rsa or ecdsa.")
 
 	var cmdGen = &cobra.Command{
 		Use:   "cert",
@@ -81,6 +87,8 @@ func main() {
 	cmdGen.Flags().String("pass", "", "Passphrase to use for the private key. If not given it will not be encryped.")
 	addPKIXFlags(cmdGen)
 	addSigningFlags(cmdGen)
+	addUsageFlags(cmdGen)
+	addOutputFlags(cmdGen)
 
 	var csrGen = &cobra.Command{
 		Use:   "csr",
@@ -93,6 +101,7 @@ func main() {
 		},
 	}
 	addPKIXFlags(csrGen)
+	addOutputFlags(csrGen)
 
 	var csrSign = &cobra.Command{
 		Use:   "sign",
@@ -106,10 +115,58 @@ func main() {
 	}
 	csrSign.Flags().StringSlice("csr", nil, "Path to csrs to sign.")
 	addSigningFlags(csrSign)
+	addUsageFlags(csrSign)
+	addOutputFlags(csrSign)
 
-	rootCmd.AddCommand(cmdGen)
-	rootCmd.AddCommand(csrGen)
-	rootCmd.AddCommand(csrSign)
+	var verifyCmd = &cobra.Command{
+		Use:   "verify",
+		Short: "Verify if the given cert has been signed by another one",
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			return viper.BindPFlags(cmd.Flags())
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			verifyCert()
+		},
+	}
+	verifyCmd.Flags().String("cert", "", "Path to certificate to verify.")
+	verifyCmd.Flags().String("signer", "", "Path to signing certificate.")
+	addUsageFlags(verifyCmd)
+
+	var decryptCmd = &cobra.Command{
+		Use:   "decrypt",
+		Short: "Decrypt of the given private key",
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			return viper.BindPFlags(cmd.Flags())
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			decryptPrivateKey()
+		},
+	}
+	decryptCmd.Flags().String("key", "", "path to the key.")
+	decryptCmd.Flags().String("pass", "", "password to decrypt the key.")
+
+	var encryptCmd = &cobra.Command{
+		Use:   "encrypt",
+		Short: "Encrypt of the given private key",
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			return viper.BindPFlags(cmd.Flags())
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			encryptPrivateKey()
+		},
+	}
+	encryptCmd.Flags().String("key", "", "path to the key.")
+	encryptCmd.Flags().String("pass", "", "password to encrypt the key.")
+
+	rootCmd.AddCommand(
+		cmdGen,
+		csrGen,
+		csrSign,
+		verifyCmd,
+		decryptCmd,
+		encryptCmd,
+	)
+
 	rootCmd.Execute() // nolint: errcheck
 }
 
@@ -225,7 +282,7 @@ func generateCertificate() {
 	}
 
 	if pass := viper.GetString("pass"); pass != "" {
-		priv, err = x509.EncryptPEMBlock(rand.Reader, priv.Type, priv.Bytes, []byte(pass), x509.PEMCipherAES256)
+		priv, err = tglib.EncryptPrivateKey(priv, pass)
 		if err != nil {
 			logrus.WithError(err).Fatal("unable to encrypt private key")
 		}
@@ -262,7 +319,7 @@ func generateCertificate() {
 	logrus.WithFields(logrus.Fields{
 		"cert": viper.GetString("name") + "-cert.pem",
 		"key":  viper.GetString("name") + "-key.pem",
-	}).Info("X509 certificate key pair created")
+	}).Info("certificate key pair created")
 }
 
 func generateCSR() {
@@ -443,6 +500,7 @@ func signCSR() {
 				extKeyUsage,
 				signalg,
 				pkalg,
+				false,
 				makePolicies(),
 			)
 			if err != nil {
@@ -462,6 +520,87 @@ func signCSR() {
 			}).Info("Certificate issued")
 		}
 	}
+}
+
+func verifyCert() {
+
+	if viper.GetString("cert") == "" {
+		logrus.Fatal("you must specify at a cert via --cert")
+	}
+
+	if viper.GetString("signer") == "" {
+		logrus.Fatal("you must specify at a signer cert via --signer")
+	}
+
+	certData, err := ioutil.ReadFile(viper.GetString("cert"))
+	if err != nil {
+		logrus.Fatal("certificate doesn't exist")
+	}
+
+	signerData, err := ioutil.ReadFile(viper.GetString("signer"))
+	if err != nil {
+		logrus.Fatal("signing certificate doesn't existexist")
+	}
+
+	var extKeyUsage []x509.ExtKeyUsage
+	if viper.GetBool("auth-client") {
+		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageClientAuth)
+	}
+	if viper.GetBool("auth-server") {
+		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageServerAuth)
+	}
+
+	if err := tglib.Verify(signerData, certData, extKeyUsage); err != nil {
+		logrus.WithError(err).Fatal("could not verify the certificate")
+	}
+
+	logrus.Info("certificate verified")
+}
+
+func decryptPrivateKey() {
+
+	if viper.GetString("key") == "" {
+		logrus.Fatal("you must specify the key to decrypt via --key")
+	}
+
+	if viper.GetString("pass") == "" {
+		logrus.Fatal("you must specify the key password --pass")
+	}
+
+	keyData, err := ioutil.ReadFile(viper.GetString("key"))
+	if err != nil {
+		logrus.Fatal("private key doesn't exist")
+	}
+
+	keyBlock, err := tglib.DecryptPrivateKeyPEM(keyData, viper.GetString("pass"))
+	if err != nil {
+		logrus.WithError(err).Fatal("unable to decrypt private key")
+	}
+
+	fmt.Printf("%s", pem.EncodeToMemory(keyBlock))
+}
+
+func encryptPrivateKey() {
+
+	if viper.GetString("key") == "" {
+		logrus.Fatal("you must specify the key to encrypt via --key")
+	}
+
+	if viper.GetString("pass") == "" {
+		logrus.Fatal("you must specify the key password --pass")
+	}
+
+	keyData, err := ioutil.ReadFile(viper.GetString("key"))
+	if err != nil {
+		logrus.Fatal("private key doesn't existe")
+	}
+
+	keyBlock, err := tglib.EncryptPrivateKeyPEM(keyData, viper.GetString("pass"))
+	if err != nil {
+		logrus.WithError(err).Fatal("unable to decrypt private key")
+	}
+
+	fmt.Printf("%s", pem.EncodeToMemory(keyBlock))
 }
 
 func makePolicies() []asn1.ObjectIdentifier {

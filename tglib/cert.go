@@ -83,7 +83,7 @@ func IssueCertiticate(
 		signerKey = priv
 	}
 
-	certPEM, err := SignCSR(csr, signingCertificate, signerKey, beginning, expiration, keyUsage, extKeyUsage, signatureAlgorithm, publicKeyAlgorithm, policies)
+	certPEM, err := SignCSR(csr, signingCertificate, signerKey, beginning, expiration, keyUsage, extKeyUsage, signatureAlgorithm, publicKeyAlgorithm, isCA, policies)
 	if err != nil {
 		return nil, nil, err
 	}
