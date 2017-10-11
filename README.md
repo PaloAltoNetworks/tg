@@ -10,15 +10,15 @@ tg (short for tlsgen, and also a french pun) makes issuing certificates easy. It
 
 To generate a self signed certificate server certificate:
 
-    tg --name mycert --org acme --common-name john --auth-server
+    tg cert --name mycert --org acme --common-name john --auth-server
 
 To generate a CA:
 
-    tg --name myca --org acme --common-name root --is-ca --pass secret
+    tg cert --name myca --org acme --common-name root --is-ca --pass secret
 
 To issue a client certificate from a CA:
 
-    tg --name myclient --org acme --common-name client
+    tg cert --name myclient --org acme --common-name client
         --auth-client \
         --signing-cert myca-cert.pem \
         --signing-cert-key myca-key.pem \

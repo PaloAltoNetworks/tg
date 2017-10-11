@@ -68,7 +68,7 @@ func SignCSR(
 	signingCertificate *x509.Certificate,
 	signingPrivateKey crypto.PrivateKey,
 
-	begining time.Time,
+	beginning time.Time,
 	expiration time.Time,
 	keyUsage x509.KeyUsage,
 	extKeyUsage []x509.ExtKeyUsage,
@@ -107,7 +107,7 @@ func SignCSR(
 		IPAddresses:           csr.IPAddresses,
 		KeyUsage:              keyUsage,
 		NotAfter:              expiration,
-		NotBefore:             begining,
+		NotBefore:             beginning,
 		PublicKeyAlgorithm:    publicKeyAlgorithm,
 		SubjectKeyId:          sid.Bytes(),
 		PolicyIdentifiers:     policies,
@@ -115,7 +115,6 @@ func SignCSR(
 
 	signerCert := x509Cert
 	if signingCertificate != nil {
-
 		if signingCertificate.KeyUsage&x509.KeyUsageCertSign == 0 {
 			logrus.Warn("The given parent certificate should be used to sign certificates as it doesn't have correct key usage")
 		}
