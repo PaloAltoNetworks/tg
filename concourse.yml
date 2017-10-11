@@ -31,5 +31,5 @@ run:
     cd -
 
     echo $commit_sha  > build/src_sha
-    cp -a go/src/github.com/aporeto-inc/apoctl/docker/* docker
-    cp -a go/src/github.com/aporeto-inc/apoctl/build/* build
+    cp -a go/src/github.com/aporeto-inc/tg/docker/* docker
+    cp -a go/src/github.com/aporeto-inc/tg/build/* build
