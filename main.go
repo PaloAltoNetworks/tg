@@ -66,7 +66,7 @@ func main() {
 	rootCmd.PersistentFlags().String("algo", "ecdsa", "Signature algorithm to use. Can be rsa or ecdsa.")
 
 	var cmdGen = &cobra.Command{
-		Use:   "gen",
+		Use:   "cert",
 		Short: "Generate certificates",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return viper.BindPFlags(cmd.Flags())
