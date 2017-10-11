@@ -8,7 +8,7 @@ tg (short for tlsgen, and also a french pun) makes issuing certificates easy. It
 
 ## Examples
 
-To generate a self signed certificate server certificate:
+To generate a self signed server certificate:
 
     % tg cert --name mycert --org acme --common-name john --auth-server
     INFO[0000] certificate key pair created             cert=mycert-cert.pem key=mycert-key.pem
@@ -37,7 +37,7 @@ To generate a CSR and a private key:
     % tg csr --name myreq --org acme --common-name client
     INFO[0000] Certificate request and private key created   csr=myreq-csr.pem key=myreq-key.pem
 
-To Sign a CSR:
+To sign a CSR:
 
     % tg sign --name newcert --csr myreq-csr.pem \
         --auth-server \
