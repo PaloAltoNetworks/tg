@@ -46,6 +46,14 @@ To Sign a CSR:
         --signing-cert-key-pass secret
     INFO[0000] Certificate issued                            cert=newcert-cert.pem
 
+To encrypt a private key:
+
+    % tg encrypt --key myclient-key.pem --pass secret > myclient-key.pem.enc
+
+To decrypt a private key:
+
+    % tg decrypt --key myclient-key.pem.enc --pass secret
+
 Lot's of additional options:
 
     tg -h
