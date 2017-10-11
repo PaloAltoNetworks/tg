@@ -2,12 +2,135 @@ package tglib
 
 import (
 	"crypto"
+	"crypto/ecdsa"
+	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/asn1"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
+	"net"
+	"time"
 )
+
+// IssueCertiticate issues a new Certificate eventual signed using the signingCertificate
+// and the given keyGen.
+func IssueCertiticate(
+	signingCertificate *x509.Certificate,
+	signingPrivateKey crypto.PrivateKey,
+	keyGen PrivateKeyGenerator,
+
+	countries []string,
+	provinces []string,
+	localities []string,
+	streetAddresses []string,
+	postalCodes []string,
+	organizations []string,
+	organizationalUnits []string,
+	commonName string,
+
+	dnsNames []string,
+	ipAddresses []net.IP,
+
+	begining time.Time,
+	expiration time.Time,
+	keyUsage x509.KeyUsage,
+	extKeyUsage []x509.ExtKeyUsage,
+	signatureAlgorithm x509.SignatureAlgorithm,
+	publicKeyAlgorithm x509.PublicKeyAlgorithm,
+	isCA bool,
+
+	policies []asn1.ObjectIdentifier,
+
+) (*pem.Block, *pem.Block, error) {
+
+	priv, err := keyGen()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var pub crypto.PublicKey
+	switch k := priv.(type) {
+	case *ecdsa.PrivateKey:
+		pub = k.Public()
+	case *rsa.PrivateKey:
+		pub = k.Public()
+	default:
+		return nil, nil, fmt.Errorf("Unsupported private key")
+	}
+
+	csr := &x509.CertificateRequest{
+		Subject: pkix.Name{
+			Country:            countries,
+			Locality:           localities,
+			Province:           provinces,
+			StreetAddress:      streetAddresses,
+			PostalCode:         postalCodes,
+			Organization:       organizations,
+			OrganizationalUnit: organizationalUnits,
+			CommonName:         commonName,
+		},
+		DNSNames:           dnsNames,
+		IPAddresses:        ipAddresses,
+		PublicKeyAlgorithm: publicKeyAlgorithm,
+		PublicKey:          pub,
+	}
+
+	signerKey := signingPrivateKey
+	if signingPrivateKey == nil {
+		signerKey = priv
+	}
+
+	certPEM, err := SignCSR(csr, signingCertificate, signerKey, begining, expiration, keyUsage, extKeyUsage, signatureAlgorithm, publicKeyAlgorithm, policies)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	privPEM, err := KeyToPEM(priv)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return certPEM, privPEM, nil
+}
+
+// Verify verifies the given certificate is signed by the given other certificate, and that
+// the other certificate has the correct required key usage.
+func Verify(signingCertPEMData []byte, certPEMData []byte, keyUsages []x509.ExtKeyUsage) error {
+
+	roots := x509.NewCertPool()
+	ok := roots.AppendCertsFromPEM([]byte(signingCertPEMData))
+	if !ok {
+		return fmt.Errorf("Unable to parse signing certificate")
+	}
+
+	block, rest := pem.Decode(certPEMData)
+	if block == nil || len(rest) != 0 {
+		return fmt.Errorf("Invalid child certificate")
+	}
+
+	x509Cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return fmt.Errorf("Unable to parse child certificate: %s", err)
+	}
+
+	if keyUsages == nil {
+		keyUsages = []x509.ExtKeyUsage{x509.ExtKeyUsageAny}
+	}
+
+	if _, err := x509Cert.Verify(
+		x509.VerifyOptions{
+			Roots:     roots,
+			KeyUsages: keyUsages,
+		},
+	); err != nil {
+		return fmt.Errorf("Unable to verify child certificate: %s", err)
+	}
+
+	return nil
+}
 
 // ReadCertificate returns a new *x509.Certificate from the PEM bytes pf a cert and a key and decrypts it with the given password if needed.
 func ReadCertificate(certPemBytes []byte, keyPemBytes []byte, password string) (*x509.Certificate, crypto.PrivateKey, error) {

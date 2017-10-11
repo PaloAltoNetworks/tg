@@ -5,7 +5,12 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/asn1"
 	"encoding/pem"
+	"math/big"
+	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 // LoadCSRs loads the given bytes as an array of Certificate Signing Request.
@@ -55,4 +60,79 @@ func GenerateCSR(csr *x509.CertificateRequest, privateKey crypto.PrivateKey) ([]
 	}
 
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE REQUEST", Bytes: csrDerBytes}), nil
+}
+
+// SignCSR will sign the given CSR with the given signing cert
+func SignCSR(
+	csr *x509.CertificateRequest,
+	signingCertificate *x509.Certificate,
+	signingPrivateKey crypto.PrivateKey,
+
+	begining time.Time,
+	expiration time.Time,
+	keyUsage x509.KeyUsage,
+	extKeyUsage []x509.ExtKeyUsage,
+	signatureAlgorithm x509.SignatureAlgorithm,
+	publicKeyAlgorithm x509.PublicKeyAlgorithm,
+
+	policies []asn1.ObjectIdentifier,
+
+) (*pem.Block, error) {
+
+	sn, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
+	if err != nil {
+		return nil, err
+	}
+
+	sid, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
+	if err != nil {
+		return nil, err
+	}
+
+	x509Cert := &x509.Certificate{
+		SerialNumber: sn,
+		Subject: pkix.Name{
+			Country:            csr.Subject.Country,
+			Locality:           csr.Subject.Locality,
+			Province:           csr.Subject.Province,
+			StreetAddress:      csr.Subject.StreetAddress,
+			PostalCode:         csr.Subject.PostalCode,
+			Organization:       csr.Subject.Organization,
+			OrganizationalUnit: csr.Subject.OrganizationalUnit,
+			CommonName:         csr.Subject.CommonName,
+		},
+		BasicConstraintsValid: true,
+		DNSNames:              csr.DNSNames,
+		ExtKeyUsage:           extKeyUsage,
+		IPAddresses:           csr.IPAddresses,
+		KeyUsage:              keyUsage,
+		NotAfter:              expiration,
+		NotBefore:             begining,
+		PublicKeyAlgorithm:    publicKeyAlgorithm,
+		SubjectKeyId:          sid.Bytes(),
+		PolicyIdentifiers:     policies,
+	}
+
+	signerCert := x509Cert
+	if signingCertificate != nil {
+
+		if signingCertificate.KeyUsage&x509.KeyUsageCertSign == 0 {
+			logrus.Warn("The given parent certificate should be used to sign certificates as it doesn't have correct key usage")
+		}
+		signerCert = signingCertificate
+	}
+
+	x509Cert.AuthorityKeyId = signerCert.SubjectKeyId
+
+	asn1Data, err := x509.CreateCertificate(rand.Reader, x509Cert, signerCert, csr.PublicKey, signingPrivateKey)
+	if err != nil {
+		return nil, err
+	}
+
+	certPEM := &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: asn1Data,
+	}
+
+	return certPEM, nil
 }
