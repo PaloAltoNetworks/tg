@@ -43,7 +43,7 @@ func addSigningFlags(cmd *cobra.Command) {
 	cmd.Flags().String("signing-cert", "", "Path to the signing certificate.")
 	cmd.Flags().String("signing-cert-key", "", "Path to the signing certificate key.")
 	cmd.Flags().String("signing-cert-key-pass", "", "PathPassword to decrypt the signing certificate key.")
-	cmd.Flags().StringSlice("policy", nil, "Additonal policy extensions in the form --policy <OID>. Note that 1.3.6.1.4.1 is automatically added. Just start with your PEN number.")
+	cmd.Flags().StringSlice("policy", nil, "Additional policy extensions in the form --policy <OID>. Note that 1.3.6.1.4.1 is automatically added. Just start with your PEN number.")
 	cmd.Flags().Duration("validity", 86400*time.Hour, "Duration of the validity of the certificate.")
 	cmd.Flags().Bool("auth-server", false, "If set, the issued certificate can be used for server authentication.")
 	cmd.Flags().Bool("auth-client", false, "If set, the issued certificate can be used for client authentication.")
@@ -110,7 +110,7 @@ func main() {
 	rootCmd.AddCommand(cmdGen)
 	rootCmd.AddCommand(csrGen)
 	rootCmd.AddCommand(csrSign)
-	rootCmd.Execute()
+	rootCmd.Execute() // nolint: errcheck
 }
 
 func generateCertificate() {

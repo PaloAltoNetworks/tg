@@ -34,7 +34,7 @@ func IssueCertiticate(
 	dnsNames []string,
 	ipAddresses []net.IP,
 
-	begining time.Time,
+	beginning time.Time,
 	expiration time.Time,
 	keyUsage x509.KeyUsage,
 	extKeyUsage []x509.ExtKeyUsage,
@@ -83,7 +83,7 @@ func IssueCertiticate(
 		signerKey = priv
 	}
 
-	certPEM, err := SignCSR(csr, signingCertificate, signerKey, begining, expiration, keyUsage, extKeyUsage, signatureAlgorithm, publicKeyAlgorithm, policies)
+	certPEM, err := SignCSR(csr, signingCertificate, signerKey, beginning, expiration, keyUsage, extKeyUsage, signatureAlgorithm, publicKeyAlgorithm, policies)
 	if err != nil {
 		return nil, nil, err
 	}
