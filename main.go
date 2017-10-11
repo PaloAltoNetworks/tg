@@ -351,6 +351,11 @@ func generateCSR() {
 	); err != nil {
 		logrus.WithError(err).Fatal("unable to write public key on file")
 	}
+
+	logrus.WithFields(logrus.Fields{
+		"csr": viper.GetString("name") + "-csr.pem",
+		"key": viper.GetString("name") + "-key.pem",
+	}).Info("Certificate request and private key created")
 }
 
 func signCSR() {
@@ -452,9 +457,11 @@ func signCSR() {
 				logrus.WithError(err).Fatal("unable to write certificate on file")
 			}
 
+			logrus.WithFields(logrus.Fields{
+				"cert": viper.GetString("name") + "-cert.pem",
+			}).Info("Certificate issued")
 		}
 	}
-
 }
 
 func makePolicies() []asn1.ObjectIdentifier {
