@@ -161,7 +161,7 @@ func main() {
 		policies = append(policies, oid)
 	}
 
-	priv, pub, err := tglib.IssueCertiticate(
+	pub, priv, err := tglib.IssueCertiticate(
 		signingCert,
 		signingKey,
 		keygen,

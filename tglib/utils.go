@@ -176,17 +176,12 @@ func IssueCertiticate(
 		Bytes: asn1Data,
 	}
 
-	return privPEM, certPEM, nil
+	return certPEM, privPEM, nil
 }
 
-// ReadCertificatePEM returns a new *x509.Certificate from the path of a cert, a key in PEM
-// and decrypts it with the given password if needed.
-func ReadCertificatePEM(certPath, keyPath, password string) (*x509.Certificate, crypto.PrivateKey, error) {
+// ReadCertificate returns a new *x509.Certificate from the PEM bytes pf a cert and a key and decrypts it with the given password if needed.
+func ReadCertificate(certPemBytes []byte, keyPemBytes []byte, password string) (*x509.Certificate, crypto.PrivateKey, error) {
 
-	certPemBytes, err := ioutil.ReadFile(certPath)
-	if err != nil {
-		return nil, nil, err
-	}
 	certBlock, rest := pem.Decode(certPemBytes)
 	for {
 		if len(rest) == 0 {
@@ -199,11 +194,6 @@ func ReadCertificatePEM(certPath, keyPath, password string) (*x509.Certificate, 
 		return nil, nil, fmt.Errorf("Could not read cert data")
 	}
 
-	keyPemBytes, err := ioutil.ReadFile(keyPath)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	keyBlock, rest := pem.Decode(keyPemBytes)
 	if len(rest) > 0 {
 		return nil, nil, fmt.Errorf("Multiple private keys found. This is not supported")
@@ -213,16 +203,10 @@ func ReadCertificatePEM(certPath, keyPath, password string) (*x509.Certificate, 
 	}
 
 	if x509.IsEncryptedPEMBlock(keyBlock) {
-
-		var data []byte
-		data, err = x509.DecryptPEMBlock(keyBlock, []byte(password))
+		var err error
+		keyBlock, err = DecryptPrivateKey(keyBlock, password)
 		if err != nil {
 			return nil, nil, err
-		}
-
-		keyBlock = &pem.Block{
-			Type:  keyBlock.Type,
-			Bytes: data,
 		}
 	}
 
@@ -253,6 +237,46 @@ func ReadCertificatePEM(certPath, keyPath, password string) (*x509.Certificate, 
 	}
 
 	return x509cert, key, nil
+}
+
+// ReadCertificatePEM returns a new *x509.Certificate from the path of a cert, a key in PEM
+// and decrypts it with the given password if needed.
+func ReadCertificatePEM(certPath, keyPath, password string) (*x509.Certificate, crypto.PrivateKey, error) {
+
+	certPemBytes, err := ioutil.ReadFile(certPath)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	keyPemBytes, err := ioutil.ReadFile(keyPath)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return ReadCertificate(certPemBytes, keyPemBytes, password)
+}
+
+// DecryptPrivateKey decrypts the given private key
+func DecryptPrivateKey(keyBlock *pem.Block, password string) (*pem.Block, error) {
+
+	var data []byte
+	data, err := x509.DecryptPEMBlock(keyBlock, []byte(password))
+	if err != nil {
+		return nil, err
+	}
+
+	return &pem.Block{
+		Type:  keyBlock.Type,
+		Bytes: data,
+	}, nil
+}
+
+// DecryptPrivateKeyPEM decrypts the given private key PEM bytes
+func DecryptPrivateKeyPEM(key []byte, password string) (*pem.Block, error) {
+
+	keyBlock, _ := pem.Decode(key)
+
+	return DecryptPrivateKey(keyBlock, password)
 }
 
 // GeneratePKCS12 generates a full PKCS certificate based on the input keys.
@@ -311,4 +335,107 @@ func LoadCSRs(csrData []byte) ([]*x509.CertificateRequest, error) {
 	}
 
 	return csrs, nil
+}
+
+// Verify verifies the given certificate is signed by the given other certificate, and that
+// the other certificate has the correct required key usage.
+func Verify(signingCertPEMData []byte, certPEMData []byte, keyUsages []x509.ExtKeyUsage) error {
+
+	roots := x509.NewCertPool()
+	ok := roots.AppendCertsFromPEM([]byte(signingCertPEMData))
+	if !ok {
+		return fmt.Errorf("Unable to parse signing certificate")
+	}
+
+	block, rest := pem.Decode(certPEMData)
+	if block == nil || len(rest) != 0 {
+		return fmt.Errorf("Invalid child certificate")
+	}
+
+	x509Cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return fmt.Errorf("Unable to parse child certificate: %s", err)
+	}
+
+	if keyUsages == nil {
+		keyUsages = []x509.ExtKeyUsage{x509.ExtKeyUsageAny}
+	}
+
+	if _, err := x509Cert.Verify(
+		x509.VerifyOptions{
+			Roots:     roots,
+			KeyUsages: keyUsages,
+		},
+	); err != nil {
+		return fmt.Errorf("Unable to verify child certificate: %s", err)
+	}
+
+	return nil
+}
+
+// GenerateSimpleCSR generate a CSR using the given parameters.
+func GenerateSimpleCSR(orgs []string, units []string, commonName string, emails []string, privateKey crypto.PrivateKey) ([]byte, error) {
+
+	csr := &x509.CertificateRequest{
+		Subject: pkix.Name{
+			CommonName:         commonName,
+			Organization:       orgs,
+			OrganizationalUnit: units,
+		},
+		EmailAddresses:     emails,
+		SignatureAlgorithm: x509.ECDSAWithSHA384,
+	}
+
+	return GenerateCSR(csr, privateKey)
+}
+
+// GenerateCSR generate a CSR using the given parameters.
+func GenerateCSR(csr *x509.CertificateRequest, privateKey crypto.PrivateKey) ([]byte, error) {
+
+	csrDerBytes, err := x509.CreateCertificateRequest(rand.Reader, csr, privateKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE REQUEST", Bytes: csrDerBytes}), nil
+}
+
+// SplitChain splits the given certificate data into the actual *x509.Certificate and a list of
+// CA chain in a []*x509.Certificate
+func SplitChain(certData []byte) (cert *x509.Certificate, caChain []*x509.Certificate, err error) {
+
+	block, rest := pem.Decode(certData)
+
+	for ; block != nil; block, rest = pem.Decode(rest) {
+
+		if block.Type != "CERTIFICATE" {
+			continue
+		}
+
+		crt, err := x509.ParseCertificate(block.Bytes)
+
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if !crt.IsCA {
+			cert = crt
+			continue
+		}
+
+		if len(rest) != 0 {
+			caChain = append(caChain, crt)
+		}
+	}
+
+	return
+}
+
+// SplitChainPEM splits the given cert PEM []byte as the actual certificate
+// and []byte as the rest of the chain.
+func SplitChainPEM(certData []byte) ([]byte, []byte) {
+
+	block, rest := pem.Decode(certData)
+
+	return pem.EncodeToMemory(block), rest
 }
