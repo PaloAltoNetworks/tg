@@ -7,10 +7,9 @@ import (
 	"crypto/x509/pkix"
 	"encoding/asn1"
 	"encoding/pem"
+	"fmt"
 	"math/big"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 // LoadCSRs loads the given bytes as an array of Certificate Signing Request.
@@ -127,7 +126,7 @@ func SignCSR(
 	signerCert := x509Cert
 	if signingCertificate != nil {
 		if signingCertificate.KeyUsage&x509.KeyUsageCertSign == 0 {
-			logrus.Warn("The given parent certificate should be used to sign certificates as it doesn't have correct key usage")
+			fmt.Println("Warn: The given parent certificate should be used to sign certificates as it doesn't have correct key usage")
 		}
 		signerCert = signingCertificate
 	}
