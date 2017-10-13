@@ -547,7 +547,7 @@ func signCSR() {
 		}
 
 		for _, csr := range csrs {
-			certBlock, err := tglib.SignCSR(
+			certBlock, _, err := tglib.SignCSR(
 				csr,
 				signingCert,
 				signingKey,
