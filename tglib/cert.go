@@ -232,10 +232,10 @@ func ReadCertificatePEMFromData(certByte []byte) (*x509.Certificate, error) {
 
 // BuildCertificatesMaps returns to maps to get what certificate to use for which DNS or IPs.
 // This can be used in a custom tls.Config.GetCertificate function.
-func BuildCertificatesMaps(certs []tls.Certificate) (map[string]*tls.Certificate, map[string]*tls.Certificate, error) {
+func BuildCertificatesMaps(certs []tls.Certificate) (map[string]tls.Certificate, map[string]tls.Certificate, error) {
 
-	certsNamesMap := map[string]*tls.Certificate{}
-	certsIPsMap := map[string]*tls.Certificate{}
+	certsNamesMap := map[string]tls.Certificate{}
+	certsIPsMap := map[string]tls.Certificate{}
 
 	for _, item := range certs {
 		for _, subItem := range item.Certificate {
@@ -244,10 +244,10 @@ func BuildCertificatesMaps(certs []tls.Certificate) (map[string]*tls.Certificate
 				return nil, nil, err
 			}
 			for _, dns := range x509Cert.DNSNames {
-				certsNamesMap[dns] = &item
+				certsNamesMap[dns] = item
 			}
 			for _, ip := range x509Cert.IPAddresses {
-				certsIPsMap[ip.String()] = &item
+				certsIPsMap[ip.String()] = item
 			}
 		}
 	}
