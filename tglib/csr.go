@@ -62,6 +62,23 @@ func GenerateCSR(csr *x509.CertificateRequest, privateKey crypto.PrivateKey) ([]
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE REQUEST", Bytes: csrDerBytes}), nil
 }
 
+// CSRFromCertificate generates a new CSR from the given certificate
+func CSRFromCertificate(cert *x509.Certificate) *x509.CertificateRequest {
+
+	return &x509.CertificateRequest{
+		DNSNames:           cert.DNSNames,
+		EmailAddresses:     cert.EmailAddresses,
+		Extensions:         cert.Extensions,
+		ExtraExtensions:    cert.ExtraExtensions,
+		IPAddresses:        cert.IPAddresses,
+		PublicKey:          cert.PublicKey,
+		Signature:          cert.Signature,
+		SignatureAlgorithm: cert.SignatureAlgorithm,
+		Subject:            cert.Subject,
+		Version:            cert.Version,
+	}
+}
+
 // SignCSR will sign the given CSR with the given signing cert
 func SignCSR(
 	csr *x509.CertificateRequest,
@@ -77,16 +94,11 @@ func SignCSR(
 
 	isCA bool,
 	policies []asn1.ObjectIdentifier,
-) (*pem.Block, error) {
+) (*pem.Block, string, error) {
 
 	sn, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
 	if err != nil {
-		return nil, err
-	}
-
-	sid, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
-	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	x509Cert := &x509.Certificate{
@@ -108,8 +120,6 @@ func SignCSR(
 		KeyUsage:              keyUsage,
 		NotAfter:              expiration,
 		NotBefore:             beginning,
-		PublicKeyAlgorithm:    publicKeyAlgorithm,
-		SubjectKeyId:          sid.Bytes(),
 		PolicyIdentifiers:     policies,
 		IsCA:                  isCA,
 	}
@@ -126,7 +136,7 @@ func SignCSR(
 
 	asn1Data, err := x509.CreateCertificate(rand.Reader, x509Cert, signerCert, csr.PublicKey, signingPrivateKey)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	certPEM := &pem.Block{
@@ -134,5 +144,5 @@ func SignCSR(
 		Bytes: asn1Data,
 	}
 
-	return certPEM, nil
+	return certPEM, sn.String(), nil
 }
