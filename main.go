@@ -36,6 +36,7 @@ func addOutputFlags(cmd *cobra.Command) {
 func addUsageFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool("auth-server", false, "If set, the issued certificate can be used for server authentication.")
 	cmd.Flags().Bool("auth-client", false, "If set, the issued certificate can be used for client authentication.")
+	cmd.Flags().Bool("auth-email", false, "If set, the issued certificate can be used for email signature/encryption.")
 }
 
 func addPKIXFlags(cmd *cobra.Command) {
@@ -186,8 +187,8 @@ func generateCertificate() {
 		viper.Set("common-name", viper.GetString("name"))
 	}
 
-	if !viper.GetBool("is-ca") && !viper.GetBool("auth-server") && !viper.GetBool("auth-client") {
-		logrus.Fatal("you must set at least one of --auth-server or --auth-client")
+	if !viper.GetBool("is-ca") && !viper.GetBool("auth-server") && !viper.GetBool("auth-client") && !viper.GetBool("auth-email") {
+		logrus.Fatal("you must set at least one of --auth-server or --auth-client or --auth-email")
 	}
 
 	if viper.GetBool("p12") && viper.GetString("p12-pass") == "" {
@@ -233,6 +234,10 @@ func generateCertificate() {
 	if viper.GetBool("auth-server") {
 		keyUsage |= x509.KeyUsageKeyEncipherment
 		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageServerAuth)
+	}
+	if viper.GetBool("auth-email") {
+		keyUsage |= x509.KeyUsageKeyEncipherment
+		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageEmailProtection)
 	}
 
 	var signingCert *x509.Certificate
@@ -485,8 +490,8 @@ func signCSR() {
 		logrus.Fatal("you must specify at least one csr via --csr")
 	}
 
-	if !viper.GetBool("is-ca") && !viper.GetBool("auth-server") && !viper.GetBool("auth-client") {
-		logrus.Fatal("you must set at least one of --auth-server or --auth-client")
+	if !viper.GetBool("is-ca") && !viper.GetBool("auth-server") && !viper.GetBool("auth-client") && !viper.GetBool("auth-email") {
+		logrus.Fatal("you must set at least one of --auth-server or --auth-client or --auth-email")
 	}
 
 	certOut := path.Join(viper.GetString("out"), viper.GetString("name")+"-cert.pem")
@@ -533,6 +538,10 @@ func signCSR() {
 	if viper.GetBool("auth-server") {
 		keyUsage |= x509.KeyUsageKeyEncipherment
 		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageServerAuth)
+	}
+	if viper.GetBool("auth-email") {
+		keyUsage |= x509.KeyUsageKeyEncipherment
+		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageEmailProtection)
 	}
 
 	for _, path := range viper.GetStringSlice("csr") {
@@ -605,6 +614,9 @@ func verifyCert() {
 	}
 	if viper.GetBool("auth-server") {
 		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageServerAuth)
+	}
+	if viper.GetBool("auth-email") {
+		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageEmailProtection)
 	}
 
 	if err := tglib.Verify(signerData, certData, extKeyUsage); err != nil {
