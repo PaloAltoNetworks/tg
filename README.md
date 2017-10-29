@@ -1,5 +1,4 @@
 # tg
-
 tg (short for tlsgen, and also a french pun) makes issuing certificates easy. It only used the standard golang crypto lib (but for generating pkcs12, as go doesn't provide a way to write them. If you want the --p12 option to work, you need openssl installed.)
 
 ## Install
