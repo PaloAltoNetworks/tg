@@ -31,6 +31,6 @@ run:
     cd -
 
     echo $commit_sha  > build/src_sha
-    cp -a go/src/github.com/aporeto-inc/tg/glide.lock build/
+    touch build/noglide.lock
     cp -a go/src/github.com/aporeto-inc/tg/docker/* docker
     cp -a go/src/github.com/aporeto-inc/tg/build/* build
