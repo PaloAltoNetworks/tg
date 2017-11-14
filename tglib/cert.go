@@ -136,11 +136,19 @@ func Verify(signingCertPEMData []byte, certPEMData []byte, keyUsages []x509.ExtK
 func ReadCertificate(certPemBytes []byte, keyPemBytes []byte, password string) (*x509.Certificate, crypto.PrivateKey, error) {
 
 	certBlock, rest := pem.Decode(certPemBytes)
+
+	if certBlock == nil {
+		return nil, nil, fmt.Errorf("Unable to decode block")
+	}
 	for {
 		if len(rest) == 0 {
 			break
 		}
 		certBlock, rest = pem.Decode(rest)
+
+		if certBlock == nil {
+			break
+		}
 	}
 
 	if certBlock == nil {
