@@ -209,6 +209,22 @@ func ReadCertificatePEM(certPath, keyPath, password string) (*x509.Certificate, 
 	return ReadCertificate(certPemBytes, keyPemBytes, password)
 }
 
+// ToTLSCertificate converts the given cert and private key to a tls.Certificate. The private key must not be encrypted.
+func ToTLSCertificate(cert *x509.Certificate, key crypto.PrivateKey) (tls.Certificate, error) {
+
+	keyBlock, err := KeyToPEM(key)
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+
+	certBlock := &pem.Block{
+		Bytes: cert.Raw,
+		Type:  "CERTIFICATE",
+	}
+
+	return tls.X509KeyPair(pem.EncodeToMemory(certBlock), pem.EncodeToMemory(keyBlock))
+}
+
 // ReadCertificatePEMFromData returns a certificate object out of a PEM encoded byte array
 func ReadCertificatePEMFromData(certByte []byte) (*x509.Certificate, error) {
 	certBlock, rest := pem.Decode(certByte)
