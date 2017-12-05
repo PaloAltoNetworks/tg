@@ -278,3 +278,20 @@ func BuildCertificatesMaps(certs []tls.Certificate) (map[string]tls.Certificate,
 
 	return certsNamesMap, certsIPsMap, nil
 }
+
+// CertToPEM converts the given *x509.Certificate to *pem.Block .
+func CertToPEM(cert *x509.Certificate) (*pem.Block, error) {
+
+	if cert == nil {
+		return nil, fmt.Errorf("nil certificate provided")
+	}
+
+	if len(cert.Raw) == 0 {
+		return nil, fmt.Errorf("certificate doesn't contain any data")
+	}
+
+	return &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: cert.Raw,
+	}, nil
+}
