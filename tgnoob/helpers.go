@@ -67,8 +67,8 @@ func GenerateCertificate(
 		return fmt.Errorf("you must set --p12-pass when setting --p12")
 	}
 
-	certOut := path.Join(out, name+"-cert.pem")
-	keyOut := path.Join(out, name+"-key.pem")
+	certOut := certificatePath(out, name)
+	keyOut := certificateKeyPath(out, name)
 
 	if _, err = os.Stat(certOut); !os.IsNotExist(err) && !force {
 		return fmt.Errorf("destination file %s already exists. Use --force to overwrite", certOut)
@@ -255,7 +255,7 @@ func GenerateCSR(
 	}
 
 	csrOut := path.Join(out, name+"-csr.pem")
-	keyOut := path.Join(out, name+"-key.pem")
+	keyOut := certificateKeyPath(out, name)
 
 	if _, err := os.Stat(csrOut); !os.IsNotExist(err) && !force {
 		return fmt.Errorf("destination file %s already exists. Use --force to overwrite", csrOut)
@@ -400,7 +400,7 @@ func SignCSR(
 		return fmt.Errorf("you must set at least one of --auth-server or --auth-client or --auth-email")
 	}
 
-	certOut := path.Join(out, name+"-cert.pem")
+	certOut := certificatePath(out, name)
 	if _, err := os.Stat(certOut); !os.IsNotExist(err) && !force {
 		return fmt.Errorf("destination file %s already exists. Use --force to overwrite", certOut)
 	}
@@ -594,6 +594,13 @@ func EncryptPrivateKey(
 	}
 
 	return pem.EncodeToMemory(keyBlock), nil
+}
+
+func certificatePath(out string, name string) string {
+	return certificatePath(out, name)
+}
+func certificateKeyPath(out string, name string) string {
+	return certificateKeyPath(out, name)
 }
 
 func makePolicies(originalPolicies []string) ([]asn1.ObjectIdentifier, error) {
