@@ -2,6 +2,7 @@ package tglib
 
 import (
 	"encoding/base64"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -25,6 +26,14 @@ func GeneratePKCS12FromFiles(out, certPath, keyPath, caPath, passphrase string) 
 
 // GeneratePKCS12 generates a pkcs12
 func GeneratePKCS12(cert []byte, key []byte, ca []byte, passphrase string) ([]byte, error) {
+
+	// Some install like Docker Scratch doesn't have /tmp folder
+	if _, err := os.Stat("/tmp"); os.IsNotExist(err) {
+		if err = os.Mkdir("/tmp", 0777); err != nil {
+			panic(fmt.Sprintf("unable to create non-existing temp folder: %s", err))
+		}
+	}
+
 	// cert
 	tmpcert, err := ioutil.TempFile("", "tmpcert")
 	if err != nil {
