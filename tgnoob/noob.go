@@ -75,7 +75,7 @@ func CreateClientCertificate(
 	var err error
 
 	if out == "" {
-		if out, err = ioutil.TempDir("", "aporeto_certificates"); err != nil {
+		if out, err = ioutil.TempDir("", "certificates"); err != nil {
 			return "", "", err
 		}
 	}
@@ -133,7 +133,7 @@ func CreateServerCertificate(
 	var err error
 
 	if out == "" {
-		if out, err = ioutil.TempDir("", "aporeto_certificates"); err != nil {
+		if out, err = ioutil.TempDir("", "certificates"); err != nil {
 			return "", "", err
 		}
 	}

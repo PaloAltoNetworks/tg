@@ -596,18 +596,22 @@ func EncryptPrivateKey(
 	return pem.EncodeToMemory(keyBlock), nil
 }
 
+// certificatePath computes the path for a certificate.
 func certificatePath(out string, name string) string {
 	return path.Join(out, name+"-cert.pem")
 }
 
+// certificateKeyPath computes the path for a certificate key.
 func certificateKeyPath(out string, name string) string {
 	return path.Join(out, name+"-key.pem")
 }
 
+// certificateRequestPath computes the path for a certificate request.
 func certificateRequestPath(out string, name string) string {
-	return path.Join(out, name+"-key.pem")
+	return path.Join(out, name+"-csr.pem")
 }
 
+// makePolicies converts a string slice to a slice of object identifier.
 func makePolicies(originalPolicies []string) ([]asn1.ObjectIdentifier, error) {
 
 	var policies []asn1.ObjectIdentifier
