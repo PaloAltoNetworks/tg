@@ -127,25 +127,25 @@ func Test_GenerateCSR(t *testing.T) {
 		Convey("If no name is provided, it should fail", func() {
 			err := GenerateCSR(
 				"demo",             // name
-				"aporeto",          // commonName
+				"",                 // commonName
 				singingCertPath,    // cert
 				signingCertKeyPath, // certKey
 				"passwd",           // certKeyPass
 				outputFolder,       // out
 				true,               // force
 				algoRSA,            // algo
-				[]string{},         // country
-				[]string{},         // state
-				[]string{},         // city
-				[]string{},         // address
-				[]string{},         // zipCode
-				[]string{},         // org
-				[]string{},         // orgUnit
-				[]string{},         // dns
-				[]string{},         // ips
+				nil,                // country
+				nil,                // state
+				nil,                // city
+				nil,                // address
+				nil,                // zipCode
+				nil,                // org
+				nil,                // orgUnit
+				nil,                // dns
+				nil,                // ips
 				[]string{},         // policies
 			)
-			So(err, ShouldNotBeNil)
+			So(err, ShouldBeNil)
 		})
 
 		Reset(func() {
