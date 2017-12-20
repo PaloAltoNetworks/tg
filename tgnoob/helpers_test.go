@@ -118,14 +118,15 @@ func Test_GenerateCertificate(t *testing.T) {
 func Test_GenerateCSR(t *testing.T) {
 	Convey("Given an outputfolder", t, func() {
 
-		var err error
-
 		outputFolder, _ := ioutil.TempDir("", "certificates")
-		singingCertPath, signingCertKeyPath, err := CreateCA("ca-acme", "acme", "passwd", outputFolder)
-		So(err, ShouldBeNil)
 
-		Convey("If no name is provided, it should fail", func() {
-			err := GenerateCSR(
+		Convey("I should be able to generate a csr with a certificate", func() {
+
+			var err error
+			singingCertPath, signingCertKeyPath, err := CreateCA("ca-acme", "acme", "passwd", outputFolder)
+			So(err, ShouldBeNil)
+
+			err = GenerateCSR(
 				"demo",             // name
 				"",                 // commonName
 				singingCertPath,    // cert
@@ -144,6 +145,30 @@ func Test_GenerateCSR(t *testing.T) {
 				nil,                // dns
 				nil,                // ips
 				[]string{},         // policies
+			)
+			So(err, ShouldBeNil)
+		})
+
+		Convey("I should be able to generate a csr without a certificate", func() {
+			err := GenerateCSR(
+				"demo",                  // name
+				"demo",                  // commonName
+				"",                      // cert
+				"",                      // certKey
+				"",                      // certKeyPass
+				outputFolder,            // out
+				true,                    // force
+				algoRSA,                 // algo
+				[]string{"us"},          // country
+				[]string{"ca"},          // state
+				[]string{"sanjose"},     // city
+				[]string{"demo street"}, // address
+				[]string{"95000"},       // zipCode
+				[]string{"demo"},        // org
+				[]string{"org-demo"},    // orgUnit
+				[]string{"demo.com"},    // dns
+				[]string{"192.169.0.1"}, // ips
+				[]string{},              // policies
 			)
 			So(err, ShouldBeNil)
 		})
