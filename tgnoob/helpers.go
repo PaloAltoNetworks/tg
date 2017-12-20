@@ -254,7 +254,7 @@ func GenerateCSR(
 		commonName = name
 	}
 
-	csrOut := path.Join(out, name+"-csr.pem")
+	csrOut := certificateRequestPath(out, name)
 	keyOut := certificateKeyPath(out, name)
 
 	if _, err := os.Stat(csrOut); !os.IsNotExist(err) && !force {
@@ -597,10 +597,15 @@ func EncryptPrivateKey(
 }
 
 func certificatePath(out string, name string) string {
-	return certificatePath(out, name)
+	return path.Join(out, name+"-cert.pem")
 }
+
 func certificateKeyPath(out string, name string) string {
-	return certificateKeyPath(out, name)
+	return path.Join(out, name+"-key.pem")
+}
+
+func certificateRequestPath(out string, name string) string {
+	return path.Join(out, name+"-key.pem")
 }
 
 func makePolicies(originalPolicies []string) ([]asn1.ObjectIdentifier, error) {
