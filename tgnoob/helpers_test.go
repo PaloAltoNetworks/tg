@@ -115,3 +115,41 @@ func Test_GenerateCertificate(t *testing.T) {
 		})
 	})
 }
+func Test_GenerateCSR(t *testing.T) {
+	Convey("Given an outputfolder", t, func() {
+
+		var err error
+
+		outputFolder, _ := ioutil.TempDir("", "certificates")
+		singingCertPath, signingCertKeyPath, err := CreateCA("ca-acme", "acme", "passwd", outputFolder)
+		So(err, ShouldBeNil)
+
+		Convey("If no name is provided, it should fail", func() {
+			err := GenerateCSR(
+				"demo",             // name
+				"aporeto",          // commonName
+				singingCertPath,    // cert
+				signingCertKeyPath, // certKey
+				"passwd",           // certKeyPass
+				outputFolder,       // out
+				true,               // force
+				algoRSA,            // algo
+				[]string{},         // country
+				[]string{},         // state
+				[]string{},         // city
+				[]string{},         // address
+				[]string{},         // zipCode
+				[]string{},         // org
+				[]string{},         // orgUnit
+				[]string{},         // dns
+				[]string{},         // ips
+				[]string{},         // policies
+			)
+			So(err, ShouldNotBeNil)
+		})
+
+		Reset(func() {
+			os.Remove(outputFolder)
+		})
+	})
+}
