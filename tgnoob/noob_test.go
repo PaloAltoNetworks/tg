@@ -26,7 +26,7 @@ func Test_CreateCA(t *testing.T) {
 		})
 
 		Reset(func() {
-			os.Remove(outputFolder)
+			os.Remove(outputFolder) // nolint
 		})
 	})
 }
@@ -101,7 +101,7 @@ func Test_CreateCertificates(t *testing.T) {
 		})
 
 		Reset(func() {
-			os.Remove(outputFolder)
+			os.Remove(outputFolder) // nolint
 		})
 
 	})

@@ -111,7 +111,7 @@ func Test_GenerateCertificate(t *testing.T) {
 		})
 
 		Reset(func() {
-			os.Remove(outputFolder)
+			os.Remove(outputFolder) // nolint
 		})
 	})
 }
@@ -174,7 +174,7 @@ func Test_GenerateCSR(t *testing.T) {
 		})
 
 		Reset(func() {
-			os.Remove(outputFolder)
+			os.Remove(outputFolder) // nolint
 		})
 	})
 }

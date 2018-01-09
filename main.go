@@ -1,9 +1,7 @@
 package main
 
 import (
-	"encoding/asn1"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -12,11 +10,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-)
-
-const (
-	algoECDSA = "ecdsa"
-	algoRSA   = "rsa"
 )
 
 func addOutputFlags(cmd *cobra.Command) {
@@ -311,26 +304,4 @@ func encryptPrivateKey() {
 	}
 
 	fmt.Printf("%s", encodedPem)
-}
-
-func makePolicies() []asn1.ObjectIdentifier {
-
-	var policies []asn1.ObjectIdentifier
-
-	for _, kv := range viper.GetStringSlice("policy") {
-		parts := strings.Split(kv, ".")
-
-		oid := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1}
-		for _, part := range parts {
-			i, e := strconv.Atoi(part)
-			if e != nil {
-				logrus.WithField("oid", kv).Fatal("Given policy OID is invalid")
-			}
-			oid = append(oid, i)
-		}
-
-		policies = append(policies, oid)
-	}
-
-	return policies
 }
