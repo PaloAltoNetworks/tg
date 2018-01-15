@@ -160,8 +160,8 @@ func CreateClientCertificate(
 		[]string{},             // zipCode
 		[]string{organization}, // org
 		[]string{},             // orgUnit
-		[]string{},             // dns
-		[]string{},             // ips
+		dns,                    // dns
+		ips,                    // ips
 		24*time.Hour,           // duration
 		[]string{},             // policies
 	); err != nil {
@@ -218,8 +218,8 @@ func CreateServerCertificate(
 		[]string{},             // zipCode
 		[]string{organization}, // org
 		[]string{},             // orgUnit
-		[]string{},             // dns
-		[]string{},             // ips
+		dns,                    // dns
+		ips,                    // ips
 		24*time.Hour,           // duration
 		[]string{},             // policies
 	); err != nil {
