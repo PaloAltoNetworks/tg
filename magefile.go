@@ -34,6 +34,20 @@ func Build() {
 	mg.SerialDeps(
 		func() error { return domingo.BuildFor("linux", domingo.BuildLinux) },
 		func() error { return domingo.BuildFor("darwin", domingo.BuildDarwin) },
-		func() error { return domingo.PackageFrom("build/linux/tg") },
 	)
+}
+
+// Package prepares the docker container.
+func Package() error {
+	return domingo.PackageFrom("build/linux/tg")
+}
+
+// Docker builds the docker container.
+func Docker() error {
+	mg.SerialDeps(
+		domingo.BuildLinux,
+		Package,
+	)
+
+	return domingo.Container()
 }

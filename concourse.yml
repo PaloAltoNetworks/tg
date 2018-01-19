@@ -26,9 +26,10 @@ run:
     go get -u github.com/magefile/mage github.com/aporeto-inc/domingo/golang
 
     cd go/src/github.com/aporeto-inc/tg
-    mage init
-    mage test
-    mage build
+    mage init || exit 1
+    mage test || exit 1
+    mage build || exit 1
+    mage package || exit 1
     commit_sha=$(git rev-parse HEAD)
     cd -
 
