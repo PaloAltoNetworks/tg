@@ -1,29 +1,15 @@
 package main
 
 import (
-	"crypto"
-	"crypto/x509"
-	"crypto/x509/pkix"
-	"encoding/asn1"
-	"encoding/pem"
 	"fmt"
-	"io/ioutil"
-	"net"
-	"os"
-	"path"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/aporeto-inc/tg/tglib"
+	"github.com/aporeto-inc/tg/tgnoob"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-)
-
-const (
-	algoECDSA = "ecdsa"
-	algoRSA   = "rsa"
 )
 
 func addOutputFlags(cmd *cobra.Command) {
@@ -177,95 +163,22 @@ func main() {
 
 func generateCertificate() {
 
-	var err error
-
-	if viper.GetString("name") == "" {
-		logrus.Fatal("you must specify a name via --name")
-	}
-
-	if viper.GetString("common-name") == "" {
-		viper.Set("common-name", viper.GetString("name"))
-	}
-
-	if !viper.GetBool("is-ca") && !viper.GetBool("auth-server") && !viper.GetBool("auth-client") && !viper.GetBool("auth-email") {
-		logrus.Fatal("you must set at least one of --auth-server or --auth-client or --auth-email")
-	}
-
-	if viper.GetBool("p12") && viper.GetString("p12-pass") == "" {
-		logrus.Fatal("you must set --p12-pass when setting --p12")
-	}
-
-	certOut := path.Join(viper.GetString("out"), viper.GetString("name")+"-cert.pem")
-	keyOut := path.Join(viper.GetString("out"), viper.GetString("name")+"-key.pem")
-
-	if _, err = os.Stat(certOut); !os.IsNotExist(err) && !viper.GetBool("force") {
-		logrus.WithField("path", certOut).Fatal("destination file already exists. Use --force to overwrite")
-	}
-	if _, err = os.Stat(keyOut); !os.IsNotExist(err) && !viper.GetBool("force") {
-		logrus.WithField("path", keyOut).Fatal("destination file already exists. Use --force to overwrite")
-	}
-
-	var keygen tglib.PrivateKeyGenerator
-	var signalg x509.SignatureAlgorithm
-	var pkalg x509.PublicKeyAlgorithm
-	switch viper.GetString("algo") {
-	case algoECDSA:
-		keygen = tglib.ECPrivateKeyGenerator
-		signalg = x509.ECDSAWithSHA384
-		pkalg = x509.ECDSA
-	case algoRSA:
-		keygen = tglib.RSAPrivateKeyGenerator
-		signalg = x509.SHA384WithRSA
-		pkalg = x509.RSA
-	}
-
-	var keyUsage x509.KeyUsage
-	var extKeyUsage []x509.ExtKeyUsage
-	if viper.GetBool("is-ca") {
-		keyUsage = x509.KeyUsageCRLSign | x509.KeyUsageCertSign
-	} else {
-		keyUsage = x509.KeyUsageDigitalSignature
-	}
-
-	if viper.GetBool("auth-client") {
-		keyUsage |= x509.KeyUsageDigitalSignature
-		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageClientAuth)
-	}
-	if viper.GetBool("auth-server") {
-		keyUsage |= x509.KeyUsageKeyEncipherment
-		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageServerAuth)
-	}
-	if viper.GetBool("auth-email") {
-		keyUsage |= x509.KeyUsageKeyEncipherment
-		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageEmailProtection)
-	}
-
-	var signingCert *x509.Certificate
-	var signingKey crypto.PrivateKey
-	signingCertPath := viper.GetString("signing-cert")
-	signingCertKeyPath := viper.GetString("signing-cert-key")
-
-	if signingCertPath != "" || signingCertKeyPath != "" {
-
-		if signingCertPath == "" || signingCertKeyPath == "" {
-			logrus.Fatal("you must pass both --signing-cert and --signing-cert-key if you pass one or the other")
-		}
-
-		signingCert, signingKey, err = tglib.ReadCertificatePEM(signingCertPath, signingCertKeyPath, viper.GetString("signing-cert-key-pass"))
-		if err != nil {
-			logrus.WithError(err).Fatal("unable to read signing certiticate information")
-		}
-	}
-
-	var ips []net.IP
-	for _, ip := range viper.GetStringSlice("ip") {
-		ips = append(ips, net.ParseIP(ip))
-	}
-
-	pub, priv, err := tglib.IssueCertiticate(
-		signingCert,
-		signingKey,
-		keygen,
+	if err := tgnoob.GenerateCertificate(
+		viper.GetString("name"),
+		viper.GetString("common-name"),
+		viper.GetString("pass"),
+		viper.GetBool("is-ca"),
+		viper.GetBool("auth-server"),
+		viper.GetBool("auth-client"),
+		viper.GetBool("auth-email"),
+		viper.GetBool("p12"),
+		viper.GetString("p12-pass"),
+		viper.GetString("out"),
+		viper.GetBool("force"),
+		viper.GetString("algo"),
+		viper.GetString("signing-cert"),
+		viper.GetString("signing-cert-key"),
+		viper.GetString("signing-cert-key-pass"),
 		viper.GetStringSlice("country"),
 		viper.GetStringSlice("state"),
 		viper.GetStringSlice("city"),
@@ -273,56 +186,12 @@ func generateCertificate() {
 		viper.GetStringSlice("zip-code"),
 		viper.GetStringSlice("org"),
 		viper.GetStringSlice("org-unit"),
-		viper.GetString("common-name"),
 		viper.GetStringSlice("dns"),
-		ips,
-		time.Now(),
-		time.Now().Add(viper.GetDuration("validity")),
-		keyUsage,
-		extKeyUsage,
-		signalg,
-		pkalg,
-		viper.GetBool("is-ca"),
-		makePolicies(),
-	)
-
-	if err != nil {
-		logrus.WithError(err).Fatal("unable to generate certificate")
-	}
-
-	if pass := viper.GetString("pass"); pass != "" {
-		priv, err = tglib.EncryptPrivateKey(priv, pass)
-		if err != nil {
-			logrus.WithError(err).Fatal("unable to encrypt private key")
-		}
-	}
-
-	if err = ioutil.WriteFile(
-		keyOut,
-		pem.EncodeToMemory(priv),
-		0644,
+		viper.GetStringSlice("ip"),
+		viper.GetDuration("validity"),
+		viper.GetStringSlice("policy"),
 	); err != nil {
-		logrus.WithError(err).Fatal("unable to write private key on file")
-	}
-
-	if err = ioutil.WriteFile(
-		certOut,
-		pem.EncodeToMemory(pub),
-		0644,
-	); err != nil {
-		logrus.WithError(err).Fatal("unable to write public key on file")
-	}
-
-	if viper.GetBool("p12") {
-		if err = tglib.GeneratePKCS12FromFiles(
-			path.Join(viper.GetString("out"), viper.GetString("name")+".p12"),
-			certOut,
-			keyOut,
-			signingCertPath,
-			viper.GetString("p12-pass"),
-		); err != nil {
-			logrus.WithError(err).Fatal("unable to write p12 on file")
-		}
+		logrus.WithError(err).Fatal("could not generate certificate")
 	}
 
 	logrus.WithFields(logrus.Fields{
@@ -333,137 +202,27 @@ func generateCertificate() {
 
 func generateCSR() {
 
-	if viper.GetString("name") == "" {
-		logrus.Fatal("you must specify a name via --name")
-	}
-
-	if viper.GetString("cert") != "" && viper.GetString("cert-key") == "" {
-		logrus.Fatal("If you specify --cert you must specify --cert-key")
-	}
-
-	if viper.GetString("cert") == "" && viper.GetString("cert-key") != "" {
-		logrus.Fatal("If you specify --cert-key you must specify --cert")
-	}
-
-	if viper.GetBool("cert") && (viper.GetStringSlice("org") != nil ||
-		viper.GetStringSlice("org-unit") != nil ||
-		viper.GetString("common-name") != "" ||
-		viper.GetStringSlice("country") != nil ||
-		viper.GetStringSlice("state") != nil ||
-		viper.GetStringSlice("city") != nil ||
-		viper.GetStringSlice("zip-code") != nil ||
-		viper.GetStringSlice("address") != nil ||
-		viper.GetStringSlice("dns") != nil ||
-		viper.GetStringSlice("ip") != nil) {
-		logrus.Fatal("If you pass cert, you cannot pass any other information.")
-	}
-
-	if viper.GetString("cert") == "" && viper.GetString("common-name") == "" {
-		viper.Set("common-name", viper.GetString("name"))
-	}
-
-	csrOut := path.Join(viper.GetString("out"), viper.GetString("name")+"-csr.pem")
-	keyOut := path.Join(viper.GetString("out"), viper.GetString("name")+"-key.pem")
-
-	if _, err := os.Stat(csrOut); !os.IsNotExist(err) && !viper.GetBool("force") {
-		logrus.WithField("path", csrOut).Fatal("destination file already exists. Use --force to overwrite")
-	}
-	if _, err := os.Stat(keyOut); !os.IsNotExist(err) && !viper.GetBool("force") {
-		logrus.WithField("path", keyOut).Fatal("destination file already exists. Use --force to overwrite")
-	}
-
-	var csrBytes []byte
-
-	if viper.GetString("cert") == "" {
-		var keygen tglib.PrivateKeyGenerator
-		var signalg x509.SignatureAlgorithm
-		var pkalg x509.PublicKeyAlgorithm
-
-		switch viper.GetString("algo") {
-		case algoECDSA:
-			keygen = tglib.ECPrivateKeyGenerator
-			signalg = x509.ECDSAWithSHA384
-			pkalg = x509.ECDSA
-		case algoRSA:
-			keygen = tglib.RSAPrivateKeyGenerator
-			signalg = x509.SHA384WithRSA
-			pkalg = x509.RSA
-		}
-
-		privateKey, err := keygen()
-		if err != nil {
-			logrus.WithError(err).Fatal("Unable to generate private key")
-		}
-		keyBlock, err := tglib.KeyToPEM(privateKey)
-		if err != nil {
-			logrus.WithError(err).Fatal("Unable to convert private key pem block")
-		}
-
-		var ips []net.IP
-		for _, ip := range viper.GetStringSlice("ip") {
-			ips = append(ips, net.ParseIP(ip))
-		}
-
-		csr := &x509.CertificateRequest{
-			Subject: pkix.Name{
-				CommonName:         viper.GetString("common-name"),
-				Organization:       viper.GetStringSlice("org"),
-				OrganizationalUnit: viper.GetStringSlice("org-unit"),
-				Country:            viper.GetStringSlice("country"),
-				Locality:           viper.GetStringSlice("city"),
-				StreetAddress:      viper.GetStringSlice("address"),
-				Province:           viper.GetStringSlice("state"),
-				PostalCode:         viper.GetStringSlice("zip-code"),
-			},
-			SignatureAlgorithm: signalg,
-			PublicKeyAlgorithm: pkalg,
-			DNSNames:           viper.GetStringSlice("dns"),
-			IPAddresses:        ips,
-		}
-
-		csrBytes, err = tglib.GenerateCSR(csr, privateKey)
-		if err != nil {
-			logrus.WithError(err).Fatal("Unable to create csr")
-		}
-
-		if err = ioutil.WriteFile(
-			keyOut,
-			pem.EncodeToMemory(keyBlock),
-			0644,
-		); err != nil {
-			logrus.WithError(err).Fatal("unable to write private key on file")
-		}
-
-	} else {
-
-		certData, err := ioutil.ReadFile(viper.GetString("cert"))
-		if err != nil {
-			logrus.WithError(err).WithField("path", viper.GetString("cert-key")).Fatal("Unable to load cert")
-		}
-		certKeyData, err := ioutil.ReadFile(viper.GetString("cert-key"))
-		if err != nil {
-			logrus.WithError(err).WithField("path", viper.GetString("cert-key")).Fatal("Unable to load cert key")
-		}
-
-		cert, key, err := tglib.ReadCertificate(certData, certKeyData, viper.GetString("cert-key-pass"))
-		if err != nil {
-			logrus.WithError(err).Fatal("Unable to read signing cert")
-		}
-
-		csr := tglib.CSRFromCertificate(cert)
-
-		csrBytes, err = tglib.GenerateCSR(csr, key)
-		if err != nil {
-			logrus.WithError(err).Fatal("Unable to create csr")
-		}
-	}
-
-	if err := ioutil.WriteFile(
-		csrOut,
-		csrBytes,
-		0644,
+	if err := tgnoob.GenerateCSR(
+		viper.GetString("name"),
+		viper.GetString("common-name"),
+		viper.GetString("cert"),
+		viper.GetString("cert-key"),
+		viper.GetString("cert-key-pass"),
+		viper.GetString("out"),
+		viper.GetBool("force"),
+		viper.GetString("algo"),
+		viper.GetStringSlice("country"),
+		viper.GetStringSlice("state"),
+		viper.GetStringSlice("city"),
+		viper.GetStringSlice("address"),
+		viper.GetStringSlice("zip-code"),
+		viper.GetStringSlice("org"),
+		viper.GetStringSlice("org-unit"),
+		viper.GetStringSlice("dns"),
+		viper.GetStringSlice("ip"),
+		viper.GetStringSlice("policy"),
 	); err != nil {
-		logrus.WithError(err).Fatal("unable to write public key on file")
+		logrus.WithError(err).Fatal("could not generate csr")
 	}
 
 	logrus.WithFields(logrus.Fields{
@@ -474,152 +233,39 @@ func generateCSR() {
 
 func signCSR() {
 
-	if viper.GetString("name") == "" {
-		logrus.Fatal("you must specify a name via --name")
+	if err := tgnoob.SignCSR(
+		viper.GetString("name"),
+		viper.GetBool("is-ca"),
+		viper.GetBool("auth-server"),
+		viper.GetBool("auth-client"),
+		viper.GetBool("auth-email"),
+		viper.GetString("out"),
+		viper.GetBool("force"),
+		viper.GetString("algo"),
+		viper.GetString("signing-cert"),
+		viper.GetString("signing-cert-key"),
+		viper.GetString("signing-cert-key-pass"),
+		viper.GetStringSlice("csr"),
+		viper.GetDuration("validity"),
+		viper.GetStringSlice("policy"),
+	); err != nil {
+		logrus.WithError(err).Fatal("could not sign csr")
 	}
 
-	if viper.GetString("signing-cert") == "" {
-		logrus.Fatal("you must specify a signing cert via --signing-cert")
-	}
-
-	if viper.GetString("signing-cert-key") == "" {
-		logrus.Fatal("you must specify a signing cert key via --signing-cert-key")
-	}
-
-	if len(viper.GetStringSlice("csr")) == 0 {
-		logrus.Fatal("you must specify at least one csr via --csr")
-	}
-
-	if !viper.GetBool("is-ca") && !viper.GetBool("auth-server") && !viper.GetBool("auth-client") && !viper.GetBool("auth-email") {
-		logrus.Fatal("you must set at least one of --auth-server or --auth-client or --auth-email")
-	}
-
-	certOut := path.Join(viper.GetString("out"), viper.GetString("name")+"-cert.pem")
-	if _, err := os.Stat(certOut); !os.IsNotExist(err) && !viper.GetBool("force") {
-		logrus.WithField("path", certOut).Fatal("destination file already exists. Use --force to overwrite")
-	}
-
-	signingCertData, err := ioutil.ReadFile(viper.GetString("signing-cert"))
-	if err != nil {
-		logrus.WithError(err).WithField("path", viper.GetString("signing-cert")).Fatal("Unable to load signing cert")
-	}
-	signingCertKeyData, err := ioutil.ReadFile(viper.GetString("signing-cert-key"))
-	if err != nil {
-		logrus.WithError(err).WithField("path", viper.GetString("signing-cert-key")).Fatal("Unable to load signing cert key")
-	}
-
-	signingCert, signingKey, err := tglib.ReadCertificate(signingCertData, signingCertKeyData, viper.GetString("signing-cert-key-pass"))
-	if err != nil {
-		logrus.WithError(err).Fatal("Unable to read signing cert")
-	}
-
-	var signalg x509.SignatureAlgorithm
-	var pkalg x509.PublicKeyAlgorithm
-	switch viper.GetString("algo") {
-	case algoECDSA:
-		signalg = x509.ECDSAWithSHA384
-		pkalg = x509.ECDSA
-	case algoRSA:
-		signalg = x509.SHA384WithRSA
-		pkalg = x509.RSA
-	}
-
-	var keyUsage x509.KeyUsage
-	var extKeyUsage []x509.ExtKeyUsage
-	if viper.GetBool("is-ca") {
-		keyUsage = x509.KeyUsageCRLSign | x509.KeyUsageCertSign
-	} else {
-		keyUsage = x509.KeyUsageDigitalSignature
-	}
-	if viper.GetBool("auth-client") {
-		keyUsage |= x509.KeyUsageDigitalSignature
-		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageClientAuth)
-	}
-	if viper.GetBool("auth-server") {
-		keyUsage |= x509.KeyUsageKeyEncipherment
-		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageServerAuth)
-	}
-	if viper.GetBool("auth-email") {
-		keyUsage |= x509.KeyUsageKeyEncipherment
-		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageEmailProtection)
-	}
-
-	for _, path := range viper.GetStringSlice("csr") {
-
-		csrData, err := ioutil.ReadFile(path)
-		if err != nil {
-			logrus.WithError(err).WithField("path", path).Fatal("Unable to load csr")
-		}
-		csrs, err := tglib.LoadCSRs(csrData)
-		if err != nil {
-			logrus.WithError(err).WithField("path", path).Fatal("Unable to parse csr")
-		}
-
-		for _, csr := range csrs {
-			certBlock, _, err := tglib.SignCSR(
-				csr,
-				signingCert,
-				signingKey,
-				time.Now(),
-				time.Now().Add(viper.GetDuration("validity")),
-				keyUsage,
-				extKeyUsage,
-				signalg,
-				pkalg,
-				viper.GetBool("is-ca"),
-				makePolicies(),
-			)
-			if err != nil {
-				logrus.WithError(err).Fatal("Unable to sign certificate")
-			}
-
-			if err = ioutil.WriteFile(
-				certOut,
-				pem.EncodeToMemory(certBlock),
-				0644,
-			); err != nil {
-				logrus.WithError(err).Fatal("unable to write certificate on file")
-			}
-
-			logrus.WithFields(logrus.Fields{
-				"cert": viper.GetString("name") + "-cert.pem",
-			}).Info("Certificate issued")
-		}
-	}
+	logrus.WithFields(logrus.Fields{
+		"cert": viper.GetString("name") + "-cert.pem",
+	}).Info("Certificate issued")
 }
 
 func verifyCert() {
 
-	if viper.GetString("cert") == "" {
-		logrus.Fatal("you must specify at a cert via --cert")
-	}
-
-	if viper.GetString("signer") == "" {
-		logrus.Fatal("you must specify at a signer cert via --signer")
-	}
-
-	certData, err := ioutil.ReadFile(viper.GetString("cert"))
-	if err != nil {
-		logrus.Fatal("certificate doesn't exist")
-	}
-
-	signerData, err := ioutil.ReadFile(viper.GetString("signer"))
-	if err != nil {
-		logrus.Fatal("signing certificate doesn't existexist")
-	}
-
-	var extKeyUsage []x509.ExtKeyUsage
-	if viper.GetBool("auth-client") {
-		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageClientAuth)
-	}
-	if viper.GetBool("auth-server") {
-		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageServerAuth)
-	}
-	if viper.GetBool("auth-email") {
-		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageEmailProtection)
-	}
-
-	if err := tglib.Verify(signerData, certData, extKeyUsage); err != nil {
+	if err := tgnoob.VerifyCert(
+		viper.GetString("cert"),
+		viper.GetString("signer"),
+		viper.GetBool("auth-server"),
+		viper.GetBool("auth-client"),
+		viper.GetBool("auth-email"),
+	); err != nil {
 		logrus.WithError(err).Fatal("could not verify the certificate")
 	}
 
@@ -628,68 +274,34 @@ func verifyCert() {
 
 func decryptPrivateKey() {
 
-	if viper.GetString("key") == "" {
-		logrus.Fatal("you must specify the key to decrypt via --key")
-	}
+	var (
+		err        error
+		encodedPem []byte
+	)
 
-	if viper.GetString("pass") == "" {
-		logrus.Fatal("you must specify the key password --pass")
-	}
-
-	keyData, err := ioutil.ReadFile(viper.GetString("key"))
-	if err != nil {
-		logrus.Fatal("private key doesn't exist")
-	}
-
-	keyBlock, err := tglib.DecryptPrivateKeyPEM(keyData, viper.GetString("pass"))
-	if err != nil {
+	if encodedPem, err = tgnoob.DecryptPrivateKey(
+		viper.GetString("key"),
+		viper.GetString("pass"),
+	); err != nil {
 		logrus.WithError(err).Fatal("unable to decrypt private key")
 	}
 
-	fmt.Printf("%s", pem.EncodeToMemory(keyBlock))
+	fmt.Printf("%s", encodedPem)
 }
 
 func encryptPrivateKey() {
 
-	if viper.GetString("key") == "" {
-		logrus.Fatal("you must specify the key to encrypt via --key")
+	var (
+		err        error
+		encodedPem []byte
+	)
+
+	if encodedPem, err = tgnoob.EncryptPrivateKey(
+		viper.GetString("key"),
+		viper.GetString("pass"),
+	); err != nil {
+		logrus.WithError(err).Fatal("unable to encrypt private key")
 	}
 
-	if viper.GetString("pass") == "" {
-		logrus.Fatal("you must specify the key password --pass")
-	}
-
-	keyData, err := ioutil.ReadFile(viper.GetString("key"))
-	if err != nil {
-		logrus.Fatal("private key doesn't existe")
-	}
-
-	keyBlock, err := tglib.EncryptPrivateKeyPEM(keyData, viper.GetString("pass"))
-	if err != nil {
-		logrus.WithError(err).Fatal("unable to decrypt private key")
-	}
-
-	fmt.Printf("%s", pem.EncodeToMemory(keyBlock))
-}
-
-func makePolicies() []asn1.ObjectIdentifier {
-
-	var policies []asn1.ObjectIdentifier
-
-	for _, kv := range viper.GetStringSlice("policy") {
-		parts := strings.Split(kv, ".")
-
-		oid := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1}
-		for _, part := range parts {
-			i, e := strconv.Atoi(part)
-			if e != nil {
-				logrus.WithField("oid", kv).Fatal("Given policy OID is invalid")
-			}
-			oid = append(oid, i)
-		}
-
-		policies = append(policies, oid)
-	}
-
-	return policies
+	fmt.Printf("%s", encodedPem)
 }
