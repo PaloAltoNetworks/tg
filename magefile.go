@@ -8,26 +8,20 @@ import (
 	"github.com/magefile/mage/mg"
 )
 
-func init() {
-	domingo.SetProjectName("tg")
-}
-
-// Init initialize the project.
+// Init initializes the project.
 func Init() {
-	mg.Deps(
-		domingo.Init,
+	mg.SerialDeps(
+		domingo.InstallDependencies,
 		Version,
 	)
 }
 
-// Version write the version file.
-func Version() {
-	mg.Deps(
-		domingo.WriteVersion,
-	)
+// Version writes the versions file.
+func Version() error {
+	return domingo.WriteVersion()
 }
 
-// Test runs unit tests.
+// Test runs the unit tests.
 func Test() {
 	mg.Deps(
 		domingo.Lint,
@@ -35,7 +29,7 @@ func Test() {
 	)
 }
 
-// Build runs builds the project and prepare the docker container.
+// Build runs builds the project for all platforms.
 func Build() {
 	mg.SerialDeps(
 		func() error { return domingo.BuildFor("linux", domingo.BuildLinux) },
