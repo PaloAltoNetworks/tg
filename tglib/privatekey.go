@@ -56,6 +56,10 @@ func KeyToPEM(key interface{}) (*pem.Block, error) {
 // DecryptPrivateKey decrypts the given private key
 func DecryptPrivateKey(keyBlock *pem.Block, password string) (*pem.Block, error) {
 
+	if !x509.IsEncryptedPEMBlock(keyBlock) {
+		return keyBlock, nil
+	}
+
 	var data []byte
 	data, err := x509.DecryptPEMBlock(keyBlock, []byte(password))
 	if err != nil {
