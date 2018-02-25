@@ -50,6 +50,28 @@ func GenerateSimpleCSR(orgs []string, units []string, commonName string, emails 
 	return GenerateCSR(csr, privateKey)
 }
 
+// GenerateCSRwithSANs generates a SPIFFE certificate CSR.
+func GenerateCSRwithSANs(orgs []string, units []string, commonName string, sans []string, privateKey crypto.PrivateKey) ([]byte, error) {
+	csr := &x509.CertificateRequest{
+		Subject: pkix.Name{
+			CommonName:         commonName,
+			Organization:       orgs,
+			OrganizationalUnit: units,
+		},
+		SignatureAlgorithm: x509.ECDSAWithSHA384,
+	}
+
+	if len(sans) > 0 {
+		s, err := BuildSubjectAltNameExtension(sans)
+		if err != nil {
+			return nil, err
+		}
+		csr.ExtraExtensions = []pkix.Extension{*s}
+	}
+
+	return GenerateCSR(csr, privateKey)
+}
+
 // GenerateCSR generate a CSR using the given parameters.
 func GenerateCSR(csr *x509.CertificateRequest, privateKey crypto.PrivateKey) ([]byte, error) {
 
@@ -121,6 +143,7 @@ func SignCSR(
 		NotBefore:             beginning,
 		PolicyIdentifiers:     policies,
 		IsCA:                  isCA,
+		ExtraExtensions:       csr.Extensions,
 	}
 
 	signerCert := x509Cert
