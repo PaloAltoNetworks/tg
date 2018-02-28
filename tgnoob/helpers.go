@@ -59,10 +59,6 @@ func GenerateCertificate(
 		commonName = name
 	}
 
-	if !isCA && !authServer && !authClient && !authEmail {
-		return fmt.Errorf("you must set at least one of --auth-server or --auth-client or --auth-email")
-	}
-
 	if p12 && p12Pass == "" {
 		return fmt.Errorf("you must set --p12-pass when setting --p12")
 	}
