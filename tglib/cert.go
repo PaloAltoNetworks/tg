@@ -9,6 +9,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/asn1"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -130,6 +131,31 @@ func Verify(signingCertPEMData []byte, certPEMData []byte, keyUsages []x509.ExtK
 	}
 
 	return nil
+}
+
+// ParseCertificate parse the given bytes to *x509.Certificate.
+func ParseCertificate(certPemBytes []byte) (*x509.Certificate, error) {
+
+	block, rest := pem.Decode(certPemBytes)
+	if block == nil {
+		return nil, errors.New("unable to parse certificate data")
+	}
+	if len(rest) != 0 {
+		return nil, errors.New("multiple certificates found in the certificate")
+	}
+
+	return x509.ParseCertificate(block.Bytes)
+}
+
+// ParseCertificatePEM reads the certificate at the given path and returns an *x509.Certificate.
+func ParseCertificatePEM(path string) (*x509.Certificate, error) {
+
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return ParseCertificate(data)
 }
 
 // ReadCertificate returns a new *x509.Certificate from the PEM bytes pf a cert and a key and decrypts it with the given password if needed.
