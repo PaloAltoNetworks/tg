@@ -141,7 +141,7 @@ func ParseCertificate(certPemBytes []byte) (*x509.Certificate, error) {
 		return nil, errors.New("unable to parse certificate data")
 	}
 	if len(rest) != 0 {
-		return nil, errors.New("multiple certificates found in the certificate")
+		return nil, errors.New("multiple certificates found in the data")
 	}
 
 	return x509.ParseCertificate(block.Bytes)
