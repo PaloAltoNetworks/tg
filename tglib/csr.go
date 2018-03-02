@@ -143,7 +143,10 @@ func SignCSR(
 		NotBefore:             beginning,
 		PolicyIdentifiers:     policies,
 		IsCA:                  isCA,
-		ExtraExtensions:       csr.Extensions,
+	}
+
+	if csr.ExtraExtensions != nil && len(csr.ExtraExtensions) > 0 {
+		x509Cert.ExtraExtensions = append(x509Cert.ExtraExtensions, csr.ExtraExtensions...)
 	}
 
 	signerCert := x509Cert
