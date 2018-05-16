@@ -293,6 +293,7 @@ func BuildCertificatesMaps(certs []tls.Certificate) (map[string]tls.Certificate,
 			if err != nil {
 				return nil, nil, err
 			}
+			certsNamesMap[x509Cert.Subject.CommonName] = item
 			for _, dns := range x509Cert.DNSNames {
 				certsNamesMap[dns] = item
 			}
