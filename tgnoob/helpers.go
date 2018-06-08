@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aporeto-inc/tg/tglib"
+	"go.aporeto.io/tg/tglib"
 )
 
 // GenerateCertificate is a wrapper on top of tglib.IssueCertificate.

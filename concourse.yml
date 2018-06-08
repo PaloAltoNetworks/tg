@@ -8,7 +8,7 @@ image_resource:
 inputs:
 - name: semver
 - name: src
-  path: go/src/github.com/aporeto-inc/tg
+  path: go/src/go.aporeto.io/tg
 
 outputs:
 - name: build
@@ -25,7 +25,7 @@ run:
 
     go get -u github.com/magefile/mage github.com/aporeto-inc/domingo/golang
 
-    cd go/src/github.com/aporeto-inc/tg
+    cd go/src/go.aporeto.io/tg
     mage init || exit 1
     mage test || exit 1
     mage build || exit 1
@@ -35,5 +35,5 @@ run:
 
     echo $commit_sha  > build/src_sha
     touch build/noglide.lock
-    cp -a go/src/github.com/aporeto-inc/tg/docker/* docker
-    cp -a go/src/github.com/aporeto-inc/tg/build/* build
+    cp -a go/src/go.aporeto.io/tg/docker/* docker
+    cp -a go/src/go.aporeto.io/tg/build/* build

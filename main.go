@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aporeto-inc/tg/tgnoob"
+	"go.aporeto.io/tg/tgnoob"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
