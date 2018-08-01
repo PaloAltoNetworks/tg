@@ -4,4 +4,3 @@ ci:
 	mage test
 	mage build
 	mage package
-	# touch build/noglide.lock
