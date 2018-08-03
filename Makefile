@@ -8,9 +8,7 @@ PROJECT_RELEASE ?= dev
 ci: init lint test build_linux build_darwin build_windows package
 
 init:
-	@echo generating versions.go
 	go generate ./...
-	dep ensure -v
 
 lint:
 	golangci-lint run \
