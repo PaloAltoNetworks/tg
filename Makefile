@@ -7,22 +7,8 @@ PROJECT_RELEASE ?= dev
 
 ci: init lint test build_linux build_darwin build_windows package
 
-define VERSIONS_FILE
-package versions
-
-// Various version information.
-var (
-	ProjectVersion = "$(PROJECT_VERSION)"
-	ProjectSha     = "$(PROJECT_SHA)"
-	ProjectRelease = "$(PROJECT_RELEASE)"
-)
-endef
-export VERSIONS_FILE
-
 init:
 	@echo generating versions.go
-	@mkdir -p ./internal/versions
-	@echo "$$VERSIONS_FILE" > ./internal/versions/versions.go
 	go generate ./...
 	dep ensure -v
 
@@ -56,18 +42,18 @@ build:
 
 build_linux: prebuild
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build
-	cp ./apoctl ./build/linux
+	cp ./tg ./build/linux
 
 build_darwin: prebuild
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build
-	cp ./apoctl ./build/darwin
+	cp ./tg ./build/darwin
 
 build_windows:
-	echo "not working" > ./build/windows/apoctl
+	echo "not working" > ./build/windows/tg
 
 package: build_linux
 	mkdir -p ./docker/app
-	cp ./apoctl ./docker/app
+	cp ./tg ./docker/app
 
 container: package
-	cd docker && docker build -t gcr.io/aporetodev/apoctl:$(PROJECT_VERSION) .
+	cd docker && docker build -t gcr.io/aporetodev/tg:$(PROJECT_VERSION) .
