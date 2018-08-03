@@ -23,13 +23,8 @@ run:
     export GOPATH=$PWD/go:$GOPATH
     export PROJECT_VERSION="$(cat 'semver/number')"
 
-    go get -u github.com/magefile/mage github.com/aporeto-inc/domingo/golang
-
     cd go/src/go.aporeto.io/tg
-    mage init || exit 1
-    mage test || exit 1
-    mage build || exit 1
-    mage package || exit 1
+    make ci
     commit_sha=$(git rev-parse HEAD)
     cd -
 
