@@ -102,7 +102,7 @@ func IssueCertiticate(
 func Verify(signingCertPEMData []byte, certPEMData []byte, keyUsages []x509.ExtKeyUsage) error {
 
 	roots := x509.NewCertPool()
-	ok := roots.AppendCertsFromPEM([]byte(signingCertPEMData))
+	ok := roots.AppendCertsFromPEM(signingCertPEMData)
 	if !ok {
 		return fmt.Errorf("Unable to parse signing certificate")
 	}
