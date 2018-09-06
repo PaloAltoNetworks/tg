@@ -161,26 +161,6 @@ func ParseCertificatePEM(path string) (*x509.Certificate, error) {
 // ReadCertificate returns a new *x509.Certificate from the PEM bytes pf a cert and a key and decrypts it with the given password if needed.
 func ReadCertificate(certPemBytes []byte, keyPemBytes []byte, password string) (*x509.Certificate, crypto.PrivateKey, error) {
 
-	certBlock, rest := pem.Decode(certPemBytes)
-
-	if certBlock == nil {
-		return nil, nil, fmt.Errorf("Unable to decode block")
-	}
-	for {
-		if len(rest) == 0 {
-			break
-		}
-		certBlock, rest = pem.Decode(rest)
-
-		if certBlock == nil {
-			break
-		}
-	}
-
-	if certBlock == nil {
-		return nil, nil, fmt.Errorf("Could not read cert data")
-	}
-
 	keyBlock, rest := pem.Decode(keyPemBytes)
 	if len(rest) > 0 {
 		return nil, nil, fmt.Errorf("Multiple private keys found. This is not supported")
@@ -197,7 +177,7 @@ func ReadCertificate(certPemBytes []byte, keyPemBytes []byte, password string) (
 		}
 	}
 
-	cert, err := tls.X509KeyPair(pem.EncodeToMemory(certBlock), pem.EncodeToMemory(keyBlock))
+	cert, err := tls.X509KeyPair(certPemBytes, pem.EncodeToMemory(keyBlock))
 	if err != nil {
 		return nil, nil, err
 	}
