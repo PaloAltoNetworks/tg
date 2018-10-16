@@ -162,11 +162,11 @@ func ParseCertificatePEM(path string) (*x509.Certificate, error) {
 func ReadCertificate(certPemBytes []byte, keyPemBytes []byte, password string) (*x509.Certificate, crypto.PrivateKey, error) {
 
 	keyBlock, rest := pem.Decode(keyPemBytes)
-	if len(rest) > 0 {
-		return nil, nil, fmt.Errorf("Multiple private keys found. This is not supported")
-	}
 	if keyBlock == nil {
 		return nil, nil, fmt.Errorf("Could not read key data")
+	}
+	if len(rest) > 0 {
+		return nil, nil, fmt.Errorf("Multiple private keys found. This is not supported")
 	}
 
 	if x509.IsEncryptedPEMBlock(keyBlock) {
