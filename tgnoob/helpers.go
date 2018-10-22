@@ -123,9 +123,9 @@ func GenerateCertificate(
 		}
 	}
 
-	var netips []net.IP
-	for _, ip := range ips {
-		netips = append(netips, net.ParseIP(ip))
+	netips := make([]net.IP, len(ips))
+	for i, ip := range ips {
+		netips[i] = net.ParseIP(ip)
 	}
 
 	asnIdentifiers, err := makePolicies(policies)
@@ -610,21 +610,21 @@ func certificateRequestPath(out string, name string) string {
 // makePolicies converts a string slice to a slice of object identifier.
 func makePolicies(originalPolicies []string) ([]asn1.ObjectIdentifier, error) {
 
-	var policies []asn1.ObjectIdentifier
+	policies := make([]asn1.ObjectIdentifier, len(originalPolicies))
 
-	for _, kv := range originalPolicies {
+	for i, kv := range originalPolicies {
 		parts := strings.Split(kv, ".")
 
 		oid := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1}
 		for _, part := range parts {
-			i, e := strconv.Atoi(part)
+			n, e := strconv.Atoi(part)
 			if e != nil {
 				return nil, fmt.Errorf("Given policy OID %s is invalid", kv)
 			}
-			oid = append(oid, i)
+			oid = append(oid, n)
 		}
 
-		policies = append(policies, oid)
+		policies[i] = oid
 	}
 
 	return policies, nil
