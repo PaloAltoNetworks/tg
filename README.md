@@ -1,5 +1,7 @@
 # tg
 
+[![codecov](https://codecov.io/gh/aporeto-inc/tg/branch/master/graph/badge.svg)](https://codecov.io/gh/aporeto-inc/tg)
+
 tg (short for tlsgen, and also a french pun) makes issuing certificates easy. It only used the standard golang crypto lib (but for generating pkcs12, as go doesn't provide a way to write them. If you want the --p12 option to work, you need openssl installed.)
 
 ## Install
@@ -59,4 +61,3 @@ Lot's of additional options:
     tg -h
 
 > NOTE: all parameters can be given using env variables. Prefix the argument with `TLSGEN_`. for instance `TLSGEN_OUT` for setting output dir.
-
