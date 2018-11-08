@@ -5,7 +5,7 @@ PROJECT_SHA ?= $(shell git rev-parse HEAD)
 PROJECT_VERSION ?= $(lastword $(shell git tag --sort version:refname --merged $(shell git rev-parse --abbrev-ref HEAD)))
 PROJECT_RELEASE ?= dev
 
-ci: init lint test build_linux build_darwin build_windows package
+ci: init lint test codecov build_linux build_darwin build_windows package
 	@echo "ci artifacts dir layout: https://github.com/aporeto-inc/builder/wiki#dir-layout"
 	mkdir -p artifacts/
 	echo "$(PROJECT_SHA)" > artifacts/src_sha
@@ -26,26 +26,43 @@ init:
 	go generate ./...
 
 lint:
+	@ go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
 	golangci-lint run \
+		--deadline=3m \
 		--disable-all \
 		--exclude-use-default=false \
 		--enable=errcheck \
 		--enable=goimports \
 		--enable=ineffassign \
+		--enable=govet \
 		--enable=golint \
 		--enable=unused \
 		--enable=structcheck \
 		--enable=varcheck \
 		--enable=deadcode \
 		--enable=unconvert \
+		--enable=goconst \
+		--enable=gosimple \
 		--enable=misspell \
+		--enable=staticcheck \
 		--enable=unparam \
 		--enable=prealloc \
 		--enable=nakedret \
+		--enable=typecheck \
 		./...
 
 test:
-	go test ./... -race -cover
+	go test ./... -race -cover -covermode=atomic -coverprofile=unit_coverage.cov
+
+coverage_aggregate:
+	@ mkdir -p artifacts
+	@ for f in `find . -maxdepth 1 -name '*.cov' -type f`; do \
+		filename="$${f##*/}" && \
+		go tool cover -html=$$f -o artifacts/$${filename%.*}.html; \
+	done;
+
+codecov: coverage_aggregate
+	bash <(curl -s https://codecov.io/bash)
 
 prebuild:
 	mkdir -p ./build/{darwin,linux,windows}
