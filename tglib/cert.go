@@ -199,6 +199,11 @@ func ReadCertificate(certPemBytes []byte, keyPemBytes []byte, password string) (
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to unmarshal the private key: %s", err)
 		}
+	case "PRIVATE KEY":
+		key, err = x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to unmarshal the private key: %s", err)
+		}
 	default:
 		return nil, nil, fmt.Errorf("Unsuported private key type: %s", keyBlock.Type)
 	}
