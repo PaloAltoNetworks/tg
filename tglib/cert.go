@@ -163,7 +163,7 @@ func ReadCertificate(certPemBytes []byte, keyPemBytes []byte, password string) (
 
 	keyBlock, rest := pem.Decode(keyPemBytes)
 	if keyBlock == nil {
-		return nil, nil, fmt.Errorf("Could not read key data")
+		return nil, nil, fmt.Errorf("Could not read key data from bytes: %s", string(keyPemBytes))
 	}
 	if len(rest) > 0 {
 		return nil, nil, fmt.Errorf("Multiple private keys found. This is not supported")
@@ -254,7 +254,7 @@ func ReadCertificatePEMFromData(certByte []byte) (*x509.Certificate, error) {
 		certBlock, rest = pem.Decode(rest)
 	}
 	if certBlock == nil {
-		return nil, fmt.Errorf("Could not read cert data")
+		return nil, fmt.Errorf("Could not read cert data from bytes: %s", string(certByte))
 	}
 
 	cert, err := x509.ParseCertificate(certBlock.Bytes)
