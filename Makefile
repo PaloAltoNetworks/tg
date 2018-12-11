@@ -11,6 +11,7 @@ ci: init lint test codecov build_linux build_darwin build_windows package
 	echo "$(PROJECT_SHA)" > artifacts/src_sha
 	echo "$(PROJECT_VERSION)" > artifacts/src_semver
 	echo "$(PROJECT_BRANCH)" > artifacts/src_branch
+	if [[ -d docker/ ]] ; then cp -r docker/ artifacts/docker/ ; fi
 	if [[ -f Gopkg.toml ]] ; then cp Gopkg.toml artifacts/ ; fi
 	if [[ -f Gopkg.lock ]] ; then cp Gopkg.lock artifacts/ ; fi
 	if [[ -d build/ ]] ; then cp -r build/ artifacts/build/ ; fi
