@@ -14,20 +14,13 @@ ci: init lint test codecov build_linux build_darwin build_windows package
 	if [[ -f Gopkg.toml ]] ; then cp Gopkg.toml artifacts/ ; fi
 	if [[ -f Gopkg.lock ]] ; then cp Gopkg.lock artifacts/ ; fi
 	if [[ -d build/ ]] ; then cp -r build/ artifacts/build/ ; fi
-	if [[ -d docker/ ]] ; then cp -r docker/ artifacts/docker/ ; fi
-	mkdir -p artifacts/repo/helm/
-	if [[ -d helm/repo/ ]] ; then cp -r helm/repo/* artifacts/repo/helm/ ; fi
-	if [[ -d helm/aggregated/ ]] ; then cp -r helm/aggregated/* artifacts/repo/helm/ ; fi
-	mkdir -p artifacts/repo/swarm/
-	if [[ -d swarm/repo/ ]] ; then cp -r swarm/repo/* artifacts/repo/swarm/ ; fi
-	if [[ -d swarm/aggregated/ ]] ; then cp -r swarm/aggregated/* artifacts/repo/swarm/ ; fi
+	GO111MODULE=on go get ./...
 
 init:
 	go generate ./...
 
 lint:
-	@ go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
-	golangci-lint run \
+	GO111MODULE=on golangci-lint run \
 		--deadline=3m \
 		--disable-all \
 		--exclude-use-default=false \
@@ -52,7 +45,7 @@ lint:
 		./...
 
 test:
-	go test ./... -race -cover -covermode=atomic -coverprofile=unit_coverage.cov
+	GO111MODULE=on go test ./... -race -cover -covermode=atomic -coverprofile=unit_coverage.cov
 
 coverage_aggregate:
 	@ mkdir -p artifacts
@@ -69,14 +62,14 @@ prebuild:
 
 .PHONY: build
 build:
-	go build
+	GO111MODULE=on && go build
 
 build_linux: prebuild
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build
+	GO111MODULE=on CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build
 	cp ./tg ./build/linux
 
 build_darwin: prebuild
-	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build
+	GO111MODULE=on CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build
 	cp ./tg ./build/darwin
 
 build_windows:
