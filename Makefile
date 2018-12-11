@@ -62,14 +62,14 @@ prebuild:
 
 .PHONY: build
 build:
-	go build
+	GO111MODULE=on && go build
 
 build_linux: prebuild
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build
+	GO111MODULE=on CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build
 	cp ./tg ./build/linux
 
 build_darwin: prebuild
-	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build
+	GO111MODULE=on CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build
 	cp ./tg ./build/darwin
 
 build_windows:
