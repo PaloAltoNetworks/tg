@@ -15,13 +15,15 @@ ci: init lint test codecov build_linux build_darwin build_windows package
 	if [[ -f Gopkg.toml ]] ; then cp Gopkg.toml artifacts/ ; fi
 	if [[ -f Gopkg.lock ]] ; then cp Gopkg.lock artifacts/ ; fi
 	if [[ -d build/ ]] ; then cp -r build/ artifacts/build/ ; fi
-	GO111MODULE=on go get ./...
+	# go get ./...
+	dep ensure
+	dep status
 
 init:
 	go generate ./...
 
 lint:
-	GO111MODULE=on golangci-lint run \
+	golangci-lint run \
 		--deadline=3m \
 		--disable-all \
 		--exclude-use-default=false \
@@ -46,7 +48,7 @@ lint:
 		./...
 
 test:
-	GO111MODULE=on go test ./... -race -cover -covermode=atomic -coverprofile=unit_coverage.cov
+	go test ./... -race -cover -covermode=atomic -coverprofile=unit_coverage.cov
 
 coverage_aggregate:
 	@ mkdir -p artifacts
@@ -63,14 +65,14 @@ prebuild:
 
 .PHONY: build
 build:
-	GO111MODULE=on && go build
+	&& go build
 
 build_linux: prebuild
-	GO111MODULE=on CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build
 	cp ./tg ./build/linux
 
 build_darwin: prebuild
-	GO111MODULE=on CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build
 	cp ./tg ./build/darwin
 
 build_windows:
