@@ -44,7 +44,7 @@ func KeyToPEM(key interface{}) (*pem.Block, error) {
 		t = "RSA PRIVATE KEY"
 
 	default:
-		return nil, fmt.Errorf("Given key is not compatible")
+		return nil, fmt.Errorf("Given key is not compatible: %T", k)
 	}
 
 	return &pem.Block{
