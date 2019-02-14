@@ -53,6 +53,21 @@ func KeyToPEM(key interface{}) (*pem.Block, error) {
 	}, nil
 }
 
+// PEMToKey loads a decrypted pem block and returns a crypto.PrivateKey
+func PEMToKey(keyBlock *pem.Block) (crypto.PrivateKey, error) {
+
+	switch keyBlock.Type {
+	case "EC PRIVATE KEY":
+		return x509.ParseECPrivateKey(keyBlock.Bytes)
+	case "RSA PRIVATE KEY":
+		return x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
+	case "PRIVATE KEY":
+		return x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
+	default:
+		return nil, fmt.Errorf("unsupported type: %s", keyBlock.Headers)
+	}
+}
+
 // DecryptPrivateKey decrypts the given private key
 func DecryptPrivateKey(keyBlock *pem.Block, password string) (*pem.Block, error) {
 
