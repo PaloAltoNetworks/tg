@@ -37,11 +37,11 @@ func KeyToPEM(key interface{}) (*pem.Block, error) {
 		if b, err = x509.MarshalECPrivateKey(k); err != nil {
 			return nil, err
 		}
-		t = "EC PRIVATE KEY"
+		t = ecPrivateKeyHeader
 
 	case *rsa.PrivateKey:
 		b = x509.MarshalPKCS1PrivateKey(k)
-		t = "RSA PRIVATE KEY"
+		t = rsaPrivateKeyHeader
 
 	default:
 		return nil, fmt.Errorf("Given key is not compatible: %T", k)
@@ -57,11 +57,11 @@ func KeyToPEM(key interface{}) (*pem.Block, error) {
 func PEMToKey(keyBlock *pem.Block) (crypto.PrivateKey, error) {
 
 	switch keyBlock.Type {
-	case "EC PRIVATE KEY":
+	case ecPrivateKeyHeader:
 		return x509.ParseECPrivateKey(keyBlock.Bytes)
-	case "RSA PRIVATE KEY":
+	case rsaPrivateKeyHeader:
 		return x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
-	case "PRIVATE KEY":
+	case privateKeyHeader:
 		return x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
 	default:
 		return nil, fmt.Errorf("unsupported type: %s", keyBlock.Headers)

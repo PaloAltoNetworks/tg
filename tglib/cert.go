@@ -189,17 +189,17 @@ func ReadCertificate(certPemBytes []byte, keyPemBytes []byte, password string) (
 
 	var key crypto.PrivateKey
 	switch keyBlock.Type {
-	case "EC PRIVATE KEY":
+	case ecPrivateKeyHeader:
 		key, err = x509.ParseECPrivateKey(keyBlock.Bytes)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to unmarshal the private key: %s", err)
 		}
-	case "RSA PRIVATE KEY":
+	case rsaPrivateKeyHeader:
 		key, err = x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to unmarshal the private key: %s", err)
 		}
-	case "PRIVATE KEY":
+	case privateKeyHeader:
 		key, err = x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to unmarshal the private key: %s", err)
