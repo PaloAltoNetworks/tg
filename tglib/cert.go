@@ -9,7 +9,6 @@ import (
 	"crypto/x509/pkix"
 	"encoding/asn1"
 	"encoding/pem"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -59,7 +58,7 @@ func IssueCertiticate(
 	case *rsa.PrivateKey:
 		pub = k.Public()
 	default:
-		return nil, nil, fmt.Errorf("Unsupported private key")
+		return nil, nil, fmt.Errorf("unsupported private key")
 	}
 
 	csr := &x509.CertificateRequest{
@@ -104,17 +103,17 @@ func Verify(signingCertPEMData []byte, certPEMData []byte, keyUsages []x509.ExtK
 	roots := x509.NewCertPool()
 	ok := roots.AppendCertsFromPEM(signingCertPEMData)
 	if !ok {
-		return fmt.Errorf("Unable to parse signing certificate")
+		return fmt.Errorf("unable to parse signing certificate")
 	}
 
 	block, rest := pem.Decode(certPEMData)
 	if block == nil || len(rest) != 0 {
-		return fmt.Errorf("Invalid child certificate")
+		return fmt.Errorf("invalid child certificate")
 	}
 
 	x509Cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
-		return fmt.Errorf("Unable to parse child certificate: %s", err)
+		return fmt.Errorf("unable to parse child certificate: %s", err)
 	}
 
 	if keyUsages == nil {
@@ -127,46 +126,99 @@ func Verify(signingCertPEMData []byte, certPEMData []byte, keyUsages []x509.ExtK
 			KeyUsages: keyUsages,
 		},
 	); err != nil {
-		return fmt.Errorf("Unable to verify child certificate: %s", err)
+		return fmt.Errorf("unable to verify child certificate: %s", err)
 	}
 
 	return nil
 }
 
-// ParseCertificate parse the given bytes to *x509.Certificate.
+// ParseCertificate parse the given PEM bytes and returns the fist *x509.Certificate.
 func ParseCertificate(certPemBytes []byte) (*x509.Certificate, error) {
 
-	block, rest := pem.Decode(certPemBytes)
-	if block == nil {
-		return nil, errors.New("unable to parse certificate data")
-	}
-	if len(rest) != 0 {
-		return nil, errors.New("multiple certificates found in the data")
+	x509certs, err := ParseCertificates(certPemBytes)
+	if err != nil {
+		return nil, err
 	}
 
-	return x509.ParseCertificate(block.Bytes)
+	return x509certs[0], nil
 }
 
-// ParseCertificatePEM reads the certificate at the given path and returns an *x509.Certificate.
+// ParseCertificates parse the given PEM bytes and returns a []*x509.Certificate.
+func ParseCertificates(certPemBytes []byte) ([]*x509.Certificate, error) {
+
+	var x509Certs []*x509.Certificate
+	var block *pem.Block
+	rest := certPemBytes
+
+	for {
+		block, rest = pem.Decode(rest)
+		if block == nil && len(rest) == 0 {
+			break
+		}
+
+		if block == nil {
+			return nil, fmt.Errorf("unable to parse certificate data: '%s'", string(rest))
+		}
+
+		x509Cert, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			return nil, fmt.Errorf("unable to parse certificate: %s", err)
+		}
+
+		x509Certs = append(x509Certs, x509Cert)
+	}
+
+	if len(x509Certs) == 0 {
+		return nil, fmt.Errorf("no certificate found in given data")
+	}
+
+	return x509Certs, nil
+}
+
+// ParseCertificatePEM reads the PEM certificate at the given path
+// and returns the first *x509.Certificate found
 func ParseCertificatePEM(path string) (*x509.Certificate, error) {
 
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to read pem file: %s", err)
 	}
 
 	return ParseCertificate(data)
 }
 
-// ReadCertificate returns a new *x509.Certificate from the PEM bytes pf a cert and a key and decrypts it with the given password if needed.
+// ParseCertificatePEMs reads the PEM certificate at the given path
+// and returns the a []*x509.Certificate.
+func ParseCertificatePEMs(path string) ([]*x509.Certificate, error) {
+
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read pem file: %s", err)
+	}
+
+	return ParseCertificates(data)
+}
+
+// ReadCertificate returns a the first *x509.Certificate from the PEM bytes pf a cert and a key and decrypts it with the given password if needed.
 func ReadCertificate(certPemBytes []byte, keyPemBytes []byte, password string) (*x509.Certificate, crypto.PrivateKey, error) {
+
+	x509certs, key, err := ReadCertificates(certPemBytes, keyPemBytes, password)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return x509certs[0], key, nil
+}
+
+// ReadCertificates returns a []*x509.Certificate from the PEM bytes pf a cert and a key and decrypts it with the given password if needed.
+func ReadCertificates(certPemBytes []byte, keyPemBytes []byte, password string) ([]*x509.Certificate, crypto.PrivateKey, error) {
 
 	keyBlock, rest := pem.Decode(keyPemBytes)
 	if keyBlock == nil {
-		return nil, nil, fmt.Errorf("Could not read key data from bytes: %s", string(keyPemBytes))
+		return nil, nil, fmt.Errorf("could not read key data from bytes: '%s'", string(keyPemBytes))
 	}
 	if len(rest) > 0 {
-		return nil, nil, fmt.Errorf("Multiple private keys found. This is not supported")
+		return nil, nil, fmt.Errorf("multiple private keys found: this is not supported")
 	}
 
 	if x509.IsEncryptedPEMBlock(keyBlock) {
@@ -182,9 +234,13 @@ func ReadCertificate(certPemBytes []byte, keyPemBytes []byte, password string) (
 		return nil, nil, err
 	}
 
-	x509cert, err := x509.ParseCertificate(cert.Certificate[0])
-	if err != nil {
-		return nil, nil, err
+	x509certs := make([]*x509.Certificate, len(cert.Certificate))
+	for i, cert := range cert.Certificate {
+		x509cert, err := x509.ParseCertificate(cert)
+		if err != nil {
+			return nil, nil, err
+		}
+		x509certs[i] = x509cert
 	}
 
 	var key crypto.PrivateKey
@@ -192,40 +248,52 @@ func ReadCertificate(certPemBytes []byte, keyPemBytes []byte, password string) (
 	case ecPrivateKeyHeader:
 		key, err = x509.ParseECPrivateKey(keyBlock.Bytes)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to unmarshal the private key: %s", err)
+			return nil, nil, fmt.Errorf("failed to unmarshal EC private key: %s", err)
 		}
 	case rsaPrivateKeyHeader:
 		key, err = x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to unmarshal the private key: %s", err)
+			return nil, nil, fmt.Errorf("failed to unmarshal RSA private key: %s", err)
 		}
 	case privateKeyHeader:
 		key, err = x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to unmarshal the private key: %s", err)
+			return nil, nil, fmt.Errorf("failed to unmarshal private key: %s", err)
 		}
 	default:
 		return nil, nil, fmt.Errorf("Unsuported private key type: %s", keyBlock.Type)
 	}
 
-	return x509cert, key, nil
+	return x509certs, key, nil
 }
 
-// ReadCertificatePEM returns a new *x509.Certificate from the path of a cert, a key in PEM
+// ReadCertificatePEM returns a the first *x509.Certificate from the path of a cert, a key in PEM
 // and decrypts it with the given password if needed.
 func ReadCertificatePEM(certPath, keyPath, password string) (*x509.Certificate, crypto.PrivateKey, error) {
 
-	certPemBytes, err := ioutil.ReadFile(certPath)
+	x509certs, key, err := ReadCertificatePEMs(certPath, keyPath, password)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	return x509certs[0], key, nil
+}
+
+// ReadCertificatePEMs returns a []*x509.Certificate from the path of a cert, a key in PEM
+// and decrypts it with the given password if needed.
+func ReadCertificatePEMs(certPath, keyPath, password string) ([]*x509.Certificate, crypto.PrivateKey, error) {
+
+	certPemBytes, err := ioutil.ReadFile(certPath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to read cert pem file: %s", err)
 	}
 
 	keyPemBytes, err := ioutil.ReadFile(keyPath)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("unable to read key pem file: %s", err)
 	}
 
-	return ReadCertificate(certPemBytes, keyPemBytes, password)
+	return ReadCertificates(certPemBytes, keyPemBytes, password)
 }
 
 // ToTLSCertificate converts the given cert and private key to a tls.Certificate. The private key must not be encrypted.
@@ -242,27 +310,6 @@ func ToTLSCertificate(cert *x509.Certificate, key crypto.PrivateKey) (tls.Certif
 	}
 
 	return tls.X509KeyPair(pem.EncodeToMemory(certBlock), pem.EncodeToMemory(keyBlock))
-}
-
-// ReadCertificatePEMFromData returns a certificate object out of a PEM encoded byte array
-func ReadCertificatePEMFromData(certByte []byte) (*x509.Certificate, error) {
-	certBlock, rest := pem.Decode(certByte)
-	for {
-		if len(rest) == 0 {
-			break
-		}
-		certBlock, rest = pem.Decode(rest)
-	}
-	if certBlock == nil {
-		return nil, fmt.Errorf("Could not read cert data from bytes: %s", string(certByte))
-	}
-
-	cert, err := x509.ParseCertificate(certBlock.Bytes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse certificate: %s", err.Error())
-	}
-
-	return cert, nil
 }
 
 // BuildCertificatesMaps returns to maps to get what certificate to use for which DNS or IPs.
