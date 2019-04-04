@@ -15,15 +15,15 @@ ci: init lint test codecov build_linux build_darwin build_windows package
 	if [[ -f Gopkg.toml ]] ; then cp Gopkg.toml artifacts/ ; fi
 	if [[ -f Gopkg.lock ]] ; then cp Gopkg.lock artifacts/ ; fi
 	if [[ -d build/ ]] ; then cp -r build/ artifacts/build/ ; fi
-	# go get ./...
-	dep ensure
-	dep status
 
 init:
+	echo running dep ensure...
+	dep ensure
+	dep status || true
 	go generate ./...
 
 lint:
-	@ go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
+	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
 	golangci-lint run \
 		--deadline=3m \
 		--disable-all \
