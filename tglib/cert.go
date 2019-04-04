@@ -312,6 +312,23 @@ func ToTLSCertificate(cert *x509.Certificate, key crypto.PrivateKey) (tls.Certif
 	return tls.X509KeyPair(pem.EncodeToMemory(certBlock), pem.EncodeToMemory(keyBlock))
 }
 
+// ToTLSCertificates converts the given certs and private key to a tls.Certificate. The private key must not be encrypted.
+func ToTLSCertificates(certs []*x509.Certificate, key crypto.PrivateKey) (tls.Certificate, error) {
+
+	keyBlock, err := KeyToPEM(key)
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+
+	var certBlocks []byte // nolint
+	for _, cert := range certs {
+		certBlocks = append(certBlocks, pem.EncodeToMemory(&pem.Block{Bytes: cert.Raw, Type: "CERTIFICATE"})...)
+		certBlocks = append(certBlocks, '\n')
+	}
+
+	return tls.X509KeyPair(certBlocks, pem.EncodeToMemory(keyBlock))
+}
+
 // BuildCertificatesMaps returns to maps to get what certificate to use for which DNS or IPs.
 // This can be used in a custom tls.Config.GetCertificate function.
 func BuildCertificatesMaps(certs []tls.Certificate) (map[string]tls.Certificate, map[string]tls.Certificate, error) {
