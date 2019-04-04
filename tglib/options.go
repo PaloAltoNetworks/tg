@@ -35,7 +35,7 @@ func newIssueCfg() issueCfg {
 	}
 }
 
-// IssueOption represents an issueing option.
+// IssueOption represents an issuing option.
 type IssueOption func(*issueCfg)
 
 // OptIssueSigner sets the signer for the certificate to be issued.
