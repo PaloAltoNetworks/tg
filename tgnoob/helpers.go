@@ -1,7 +1,6 @@
 package tgnoob
 
 import (
-	"crypto"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/asn1"
@@ -73,43 +72,31 @@ func GenerateCertificate(
 		return fmt.Errorf("destination file %s already exists. Use --force to overwrite", keyOut)
 	}
 
-	var keygen tglib.PrivateKeyGenerator
-	var signalg x509.SignatureAlgorithm
-	var pkalg x509.PublicKeyAlgorithm
-	switch algo {
-	case algoECDSA:
-		keygen = tglib.ECPrivateKeyGenerator
-		signalg = x509.ECDSAWithSHA384
-		pkalg = x509.ECDSA
-	case algoRSA:
-		keygen = tglib.RSAPrivateKeyGenerator
-		signalg = x509.SHA384WithRSA
-		pkalg = x509.RSA
+	options := []tglib.IssueOption{
+		tglib.OptIssueValidity(time.Now(), time.Now().Add(duration)),
+		tglib.OptIssueDNSSANs(dns...),
 	}
 
-	var keyUsage x509.KeyUsage
-	var extKeyUsage []x509.ExtKeyUsage
+	switch algo {
+	case algoECDSA:
+		options = append(options, tglib.OptIssueAlgorithmECDSA())
+	case algoRSA:
+		options = append(options, tglib.OptIssueAlgorithmRSA())
+	}
+
 	if isCA {
-		keyUsage = x509.KeyUsageCRLSign | x509.KeyUsageCertSign
-	} else {
-		keyUsage = x509.KeyUsageDigitalSignature
+		options = append(options, tglib.OptIssueTypeCA())
 	}
 
 	if authClient {
-		keyUsage |= x509.KeyUsageDigitalSignature
-		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageClientAuth)
+		options = append(options, tglib.OptIssueTypeClientAuth())
 	}
 	if authServer {
-		keyUsage |= x509.KeyUsageKeyEncipherment
-		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageServerAuth)
+		options = append(options, tglib.OptIssueTypeServerAuth())
 	}
 	if authEmail {
-		keyUsage |= x509.KeyUsageKeyEncipherment
-		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageEmailProtection)
+		options = append(options, tglib.OptIssueTypeEmailProtection())
 	}
-
-	var signingCert *x509.Certificate
-	var signingKey crypto.PrivateKey
 
 	if signingCertPath != "" || signingCertKeyPath != "" {
 
@@ -117,44 +104,38 @@ func GenerateCertificate(
 			return fmt.Errorf("you must pass both --signing-cert and --signing-cert-key if you pass one or the other")
 		}
 
-		signingCert, signingKey, err = tglib.ReadCertificatePEM(signingCertPath, signingCertKeyPath, signingCertKeyPass)
+		signingCert, signingKey, err := tglib.ReadCertificatePEM(signingCertPath, signingCertKeyPath, signingCertKeyPass)
 		if err != nil {
 			return fmt.Errorf("unable to read signing certiticate information: %s", err.Error())
 		}
+
+		options = append(options, tglib.OptIssueSigner(signingCert, signingKey))
 	}
 
 	netips := make([]net.IP, len(ips))
 	for i, ip := range ips {
 		netips[i] = net.ParseIP(ip)
 	}
+	options = append(options, tglib.OptIssueIPSANs(netips...))
 
 	asnIdentifiers, err := makePolicies(policies)
 	if err != nil {
 		return err
 	}
+	options = append(options, tglib.OptIssuePolicies(asnIdentifiers...))
 
-	pub, priv, err := tglib.IssueCertiticate(
-		signingCert,
-		signingKey,
-		keygen,
-		country,
-		state,
-		city,
-		address,
-		zipCode,
-		org,
-		orgUnit,
-		commonName,
-		dns,
-		netips,
-		time.Now(),
-		time.Now().Add(duration),
-		keyUsage,
-		extKeyUsage,
-		signalg,
-		pkalg,
-		isCA,
-		asnIdentifiers,
+	pub, priv, err := tglib.Issue(
+		pkix.Name{
+			Country:            country,
+			Province:           state,
+			Locality:           city,
+			StreetAddress:      address,
+			PostalCode:         zipCode,
+			Organization:       org,
+			OrganizationalUnit: orgUnit,
+			CommonName:         commonName,
+		},
+		options...,
 	)
 
 	if err != nil {

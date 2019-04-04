@@ -5,11 +5,9 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"encoding/asn1"
 	"encoding/pem"
 	"fmt"
 	"math/big"
-	"time"
 )
 
 // LoadCSRs loads the given bytes as an array of Certificate Signing Request.
@@ -100,22 +98,19 @@ func CSRFromCertificate(cert *x509.Certificate) *x509.CertificateRequest {
 	}
 }
 
-// SignCSR will sign the given CSR with the given signing cert
-func SignCSR(
+// Sign signs the give CSR using the given signer certificate and key
+// and given options.
+func Sign(
 	csr *x509.CertificateRequest,
 	signingCertificate *x509.Certificate,
 	signingPrivateKey crypto.PrivateKey,
-
-	beginning time.Time,
-	expiration time.Time,
-	keyUsage x509.KeyUsage,
-	extKeyUsage []x509.ExtKeyUsage,
-	signatureAlgorithm x509.SignatureAlgorithm,
-	publicKeyAlgorithm x509.PublicKeyAlgorithm,
-
-	isCA bool,
-	policies []asn1.ObjectIdentifier,
+	options ...IssueOption,
 ) (*pem.Block, string, error) {
+
+	cfg := newIssueCfg()
+	for _, option := range options {
+		option(&cfg)
+	}
 
 	sn, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
 	if err != nil {
@@ -136,13 +131,13 @@ func SignCSR(
 		},
 		BasicConstraintsValid: true,
 		DNSNames:              csr.DNSNames,
-		ExtKeyUsage:           extKeyUsage,
+		ExtKeyUsage:           cfg.extKeyUsage,
 		IPAddresses:           csr.IPAddresses,
-		KeyUsage:              keyUsage,
-		NotAfter:              expiration,
-		NotBefore:             beginning,
-		PolicyIdentifiers:     policies,
-		IsCA:                  isCA,
+		KeyUsage:              cfg.keyUsage,
+		NotAfter:              cfg.expiration,
+		NotBefore:             cfg.beginning,
+		PolicyIdentifiers:     cfg.policies,
+		IsCA:                  cfg.isCA,
 	}
 
 	if csr.ExtraExtensions != nil && len(csr.ExtraExtensions) > 0 {

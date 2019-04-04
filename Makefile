@@ -15,14 +15,15 @@ ci: init lint test codecov build_linux build_darwin build_windows package
 	if [[ -f Gopkg.toml ]] ; then cp Gopkg.toml artifacts/ ; fi
 	if [[ -f Gopkg.lock ]] ; then cp Gopkg.lock artifacts/ ; fi
 	if [[ -d build/ ]] ; then cp -r build/ artifacts/build/ ; fi
-	# go get ./...
-	dep ensure
-	dep status
 
 init:
+	echo running dep ensure...
+	dep ensure
+	dep status || true
 	go generate ./...
 
 lint:
+	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
 	golangci-lint run \
 		--deadline=3m \
 		--disable-all \
@@ -30,25 +31,27 @@ lint:
 		--enable=errcheck \
 		--enable=goimports \
 		--enable=ineffassign \
-		--enable=govet \
 		--enable=golint \
 		--enable=unused \
 		--enable=structcheck \
 		--enable=varcheck \
 		--enable=deadcode \
 		--enable=unconvert \
-		--enable=goconst \
-		--enable=gosimple \
 		--enable=misspell \
-		--enable=staticcheck \
-		--enable=unparam \
 		--enable=prealloc \
 		--enable=nakedret \
+		--enable=gosimple \
+		--enable=govet \
+		--enable=staticcheck \
 		--enable=typecheck \
 		./...
 
 test:
-	go test ./... -race -cover -covermode=atomic -coverprofile=unit_coverage.cov
+	@ echo 'mode: atomic' > unit_coverage.cov
+	@ for d in $(shell go list ./... | grep -v vendor); do \
+		go test -race -coverprofile=profile.out -covermode=atomic "$$d" && \
+		if [ -f profile.out ]; then tail -q -n +2 profile.out >> unit_coverage.cov; rm -f profile.out; fi; \
+	done;
 
 coverage_aggregate:
 	@ mkdir -p artifacts

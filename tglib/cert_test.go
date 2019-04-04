@@ -2,6 +2,7 @@ package tglib
 
 import (
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/pem"
 	"testing"
 	"time"
@@ -13,28 +14,9 @@ func TestIssue(t *testing.T) {
 
 	Convey("Given I issue root ECDSA CA", t, func() {
 
-		cacert, cakey, err := IssueCertiticate(
-			nil,
-			nil,
-			ECPrivateKeyGenerator,
-			nil,
-			nil,
-			nil,
-			nil,
-			nil,
-			nil,
-			nil,
-			"my-ca",
-			nil,
-			nil,
-			time.Now(),
-			time.Now().Add(2*time.Hour),
-			x509.KeyUsageCRLSign|x509.KeyUsageCertSign,
-			nil,
-			x509.ECDSAWithSHA384,
-			x509.ECDSA,
-			true,
-			nil,
+		cacert, cakey, err := Issue(
+			pkix.Name{CommonName: "my-ca"},
+			OptIssueTypeCA(),
 		)
 
 		Convey("Then err should be nil", func() {
@@ -55,30 +37,10 @@ func TestIssue(t *testing.T) {
 
 		Convey("When I Issue a cert from that CA", func() {
 
-			x509cacert, x509cakey, _ := ReadCertificate(pem.EncodeToMemory(cacert), pem.EncodeToMemory(cakey), "")
-
-			cert, _, err := IssueCertiticate(
-				x509cacert,
-				x509cakey,
-				ECPrivateKeyGenerator,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				"my-ca",
-				nil,
-				nil,
-				time.Now(),
-				time.Now().Add(2*time.Hour),
-				x509.KeyUsageCRLSign|x509.KeyUsageCertSign,
-				[]x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-				x509.ECDSAWithSHA384,
-				x509.ECDSA,
-				false,
-				nil,
+			cert, _, err := Issue(
+				pkix.Name{CommonName: "my-cert"},
+				OptIssueSignerPEMBlock(cacert, cakey, ""),
+				OptIssueTypeServerAuth(),
 			)
 
 			Convey("Then err should be nil", func() {
@@ -159,6 +121,7 @@ func TestIssue(t *testing.T) {
 		})
 	})
 }
+
 func TestParseCertificates(t *testing.T) {
 
 	Convey("Given I have a valid single certificate pem bytes", t, func() {

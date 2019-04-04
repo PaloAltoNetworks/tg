@@ -7,46 +7,20 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"encoding/asn1"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
-	"net"
-	"time"
 )
 
-// IssueCertiticate issues a new Certificate eventual signed using the signingCertificate
-// and the given keyGen.
-func IssueCertiticate(
-	signingCertificate *x509.Certificate,
-	signingPrivateKey crypto.PrivateKey,
-	keyGen PrivateKeyGenerator,
+// Issue issues a new x509 certificate
+func Issue(subject pkix.Name, options ...IssueOption) (*pem.Block, *pem.Block, error) {
 
-	countries []string,
-	provinces []string,
-	localities []string,
-	streetAddresses []string,
-	postalCodes []string,
-	organizations []string,
-	organizationalUnits []string,
-	commonName string,
+	cfg := newIssueCfg()
+	for _, option := range options {
+		option(&cfg)
+	}
 
-	dnsNames []string,
-	ipAddresses []net.IP,
-
-	beginning time.Time,
-	expiration time.Time,
-	keyUsage x509.KeyUsage,
-	extKeyUsage []x509.ExtKeyUsage,
-	signatureAlgorithm x509.SignatureAlgorithm,
-	publicKeyAlgorithm x509.PublicKeyAlgorithm,
-	isCA bool,
-
-	policies []asn1.ObjectIdentifier,
-
-) (*pem.Block, *pem.Block, error) {
-
-	priv, err := keyGen()
+	priv, err := cfg.keyGen()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -62,28 +36,19 @@ func IssueCertiticate(
 	}
 
 	csr := &x509.CertificateRequest{
-		Subject: pkix.Name{
-			Country:            countries,
-			Locality:           localities,
-			Province:           provinces,
-			StreetAddress:      streetAddresses,
-			PostalCode:         postalCodes,
-			Organization:       organizations,
-			OrganizationalUnit: organizationalUnits,
-			CommonName:         commonName,
-		},
-		DNSNames:           dnsNames,
-		IPAddresses:        ipAddresses,
-		PublicKeyAlgorithm: publicKeyAlgorithm,
+		Subject:            subject,
+		DNSNames:           cfg.dnsNames,
+		IPAddresses:        cfg.ipAddresses,
+		PublicKeyAlgorithm: cfg.publicKeyAlgorithm,
 		PublicKey:          pub,
 	}
 
-	signerKey := signingPrivateKey
-	if signingPrivateKey == nil {
+	signerKey := cfg.signingPrivateKey
+	if signerKey == nil {
 		signerKey = priv
 	}
 
-	certPEM, _, err := SignCSR(csr, signingCertificate, signerKey, beginning, expiration, keyUsage, extKeyUsage, signatureAlgorithm, publicKeyAlgorithm, isCA, policies)
+	certPEM, _, err := Sign(csr, cfg.signingCertificate, signerKey, options...)
 	if err != nil {
 		return nil, nil, err
 	}
