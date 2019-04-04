@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.aporeto.io/tg/tgnoob"
@@ -190,13 +190,10 @@ func generateCertificate() {
 		viper.GetDuration("validity"),
 		viper.GetStringSlice("policy"),
 	); err != nil {
-		logrus.WithError(err).Fatal("could not generate certificate")
+		log.Fatalf("could not generate certificate: %s", err)
 	}
 
-	logrus.WithFields(logrus.Fields{
-		"cert": viper.GetString("name") + "-cert.pem",
-		"key":  viper.GetString("name") + "-key.pem",
-	}).Info("certificate key pair created")
+	log.Printf("certificate key pair created: cert: %s-cert.pem, key: %s-key.pem", viper.GetString("name"), viper.GetString("name"))
 }
 
 func generateCSR() {
@@ -221,13 +218,10 @@ func generateCSR() {
 		viper.GetStringSlice("ip"),
 		viper.GetStringSlice("policy"),
 	); err != nil {
-		logrus.WithError(err).Fatal("could not generate csr")
+		log.Fatalf("could not generate csr: %s", err)
 	}
 
-	logrus.WithFields(logrus.Fields{
-		"csr": viper.GetString("name") + "-csr.pem",
-		"key": viper.GetString("name") + "-key.pem",
-	}).Info("Certificate request and private key created")
+	log.Printf("certificate request and private key created: cert: %s-csr.pem, key: %s-key.pem", viper.GetString("name"), viper.GetString("name"))
 }
 
 func signCSR() {
@@ -248,12 +242,10 @@ func signCSR() {
 		viper.GetDuration("validity"),
 		viper.GetStringSlice("policy"),
 	); err != nil {
-		logrus.WithError(err).Fatal("could not sign csr")
+		log.Fatalf("could not sign csr: %s", err)
 	}
 
-	logrus.WithFields(logrus.Fields{
-		"cert": viper.GetString("name") + "-cert.pem",
-	}).Info("Certificate issued")
+	log.Printf("certificate issued: cert: %s-cert.pem", viper.GetString("name"))
 }
 
 func verifyCert() {
@@ -265,10 +257,10 @@ func verifyCert() {
 		viper.GetBool("auth-client"),
 		viper.GetBool("auth-email"),
 	); err != nil {
-		logrus.WithError(err).Fatal("could not verify the certificate")
+		log.Fatalf("could not verify the certificate: %s", err)
 	}
 
-	logrus.Info("certificate verified")
+	log.Print("certificate verified")
 }
 
 func decryptPrivateKey() {
@@ -282,7 +274,7 @@ func decryptPrivateKey() {
 		viper.GetString("key"),
 		viper.GetString("pass"),
 	); err != nil {
-		logrus.WithError(err).Fatal("unable to decrypt private key")
+		log.Fatalf("unable to decrypt private key: %s", err)
 	}
 
 	fmt.Printf("%s", encodedPem)
@@ -299,7 +291,7 @@ func encryptPrivateKey() {
 		viper.GetString("key"),
 		viper.GetString("pass"),
 	); err != nil {
-		logrus.WithError(err).Fatal("unable to encrypt private key")
+		log.Fatalf("unable to encrypt private key: %s", err)
 	}
 
 	fmt.Printf("%s", encodedPem)
