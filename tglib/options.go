@@ -92,7 +92,7 @@ func OptIssueTypeCA() IssueOption {
 // This option can be combined with other OptIssueType*.
 func OptIssueTypeServerAuth() IssueOption {
 	return func(cfg *issueCfg) {
-		OptIssueExtendedKeyUsages(x509.ExtKeyUsageServerAuth)(cfg)
+		cfg.extKeyUsage = append(cfg.extKeyUsage, x509.ExtKeyUsageServerAuth)
 		cfg.keyUsage |= x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment
 	}
 }
@@ -101,7 +101,7 @@ func OptIssueTypeServerAuth() IssueOption {
 // This option can be combined with other OptIssueType*.
 func OptIssueTypeClientAuth() IssueOption {
 	return func(cfg *issueCfg) {
-		OptIssueExtendedKeyUsages(x509.ExtKeyUsageClientAuth)(cfg)
+		cfg.extKeyUsage = append(cfg.extKeyUsage, x509.ExtKeyUsageClientAuth)
 		cfg.keyUsage |= x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment
 	}
 }
@@ -110,7 +110,7 @@ func OptIssueTypeClientAuth() IssueOption {
 // This option can be combined with other OptIssueType*.
 func OptIssueTypeEmailProtection() IssueOption {
 	return func(cfg *issueCfg) {
-		OptIssueExtendedKeyUsages(x509.ExtKeyUsageEmailProtection)(cfg)
+		cfg.extKeyUsage = append(cfg.extKeyUsage, x509.ExtKeyUsageEmailProtection)
 		cfg.keyUsage |= x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment
 	}
 }
@@ -119,7 +119,7 @@ func OptIssueTypeEmailProtection() IssueOption {
 // This option can be combined with other OptIssueType*.
 func OptIssueTypeCodeSigning() IssueOption {
 	return func(cfg *issueCfg) {
-		OptIssueExtendedKeyUsages(x509.ExtKeyUsageCodeSigning)(cfg)
+		cfg.extKeyUsage = append(cfg.extKeyUsage, x509.ExtKeyUsageCodeSigning)
 		cfg.keyUsage |= x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment
 	}
 }
