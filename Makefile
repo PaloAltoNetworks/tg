@@ -23,6 +23,7 @@ init:
 	go generate ./...
 
 lint:
+	@ go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
 	golangci-lint run \
 		--deadline=3m \
 		--disable-all \
