@@ -44,7 +44,7 @@ func KeyToPEM(key interface{}) (*pem.Block, error) {
 		t = rsaPrivateKeyHeader
 
 	default:
-		return nil, fmt.Errorf("Given key is not compatible: %T", k)
+		return nil, fmt.Errorf("given key is not compatible: %T", k)
 	}
 
 	return &pem.Block{

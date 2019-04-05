@@ -17,15 +17,15 @@ ci: init lint test codecov build_linux build_darwin build_windows package
 	if [[ -d build/ ]] ; then cp -r build/ artifacts/build/ ; fi
 
 init:
-	echo running dep ensure...
+	go get -u github.com/aporeto-inc/go-bindata/...
+	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
 	dep ensure
 	dep status || true
 	go generate ./...
 
 lint:
-	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
+	# --enable=unparam
 	golangci-lint run \
-		--deadline=3m \
 		--disable-all \
 		--exclude-use-default=false \
 		--enable=errcheck \
@@ -34,16 +34,13 @@ lint:
 		--enable=golint \
 		--enable=unused \
 		--enable=structcheck \
+		--enable=staticcheck \
 		--enable=varcheck \
 		--enable=deadcode \
 		--enable=unconvert \
 		--enable=misspell \
 		--enable=prealloc \
 		--enable=nakedret \
-		--enable=gosimple \
-		--enable=govet \
-		--enable=staticcheck \
-		--enable=typecheck \
 		./...
 
 test:

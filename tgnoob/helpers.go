@@ -207,11 +207,11 @@ func GenerateCSR(
 	}
 
 	if cert != "" && certKey == "" {
-		return fmt.Errorf("If you specify --cert you must specify --cert-key")
+		return fmt.Errorf("if you specify --cert you must specify --cert-key")
 	}
 
 	if cert == "" && certKey != "" {
-		return fmt.Errorf("If you specify --cert-key you must specify --cert")
+		return fmt.Errorf("if you specify --cert-key you must specify --cert")
 	}
 
 	if cert != "" && (org != nil ||
@@ -224,7 +224,7 @@ func GenerateCSR(
 		address != nil ||
 		dns != nil ||
 		ips != nil) {
-		return fmt.Errorf("If you pass cert, you cannot pass any other information")
+		return fmt.Errorf("if you pass cert, you cannot pass any other information")
 	}
 
 	if cert == "" && commonName == "" {
@@ -261,11 +261,11 @@ func GenerateCSR(
 
 		privateKey, err := keygen()
 		if err != nil {
-			return fmt.Errorf("Unable to generate private key: %s", err.Error())
+			return fmt.Errorf("unable to generate private key: %s", err.Error())
 		}
 		keyBlock, err := tglib.KeyToPEM(privateKey)
 		if err != nil {
-			return fmt.Errorf("Unable to convert private key pem block: %s", err.Error())
+			return fmt.Errorf("unable to convert private key pem block: %s", err.Error())
 		}
 
 		var netips []net.IP
@@ -292,7 +292,7 @@ func GenerateCSR(
 
 		csrBytes, err = tglib.GenerateCSR(csr, privateKey)
 		if err != nil {
-			return fmt.Errorf("Unable to create csr: %s", err.Error())
+			return fmt.Errorf("unable to create csr: %s", err.Error())
 		}
 
 		if err = ioutil.WriteFile(
@@ -307,23 +307,23 @@ func GenerateCSR(
 
 		certData, err := ioutil.ReadFile(cert)
 		if err != nil {
-			return fmt.Errorf("Unable to load cert %s: %s", certKey, err.Error())
+			return fmt.Errorf("unable to load cert %s: %s", certKey, err.Error())
 		}
 		certKeyData, err := ioutil.ReadFile(certKey)
 		if err != nil {
-			return fmt.Errorf("Unable to load cert key %s: %s", certKey, err.Error())
+			return fmt.Errorf("unable to load cert key %s: %s", certKey, err.Error())
 		}
 
 		cert, key, err := tglib.ReadCertificate(certData, certKeyData, certKeyPass)
 		if err != nil {
-			return fmt.Errorf("Unable to read signing cert: %s", err.Error())
+			return fmt.Errorf("unable to read signing cert: %s", err.Error())
 		}
 
 		csr := tglib.CSRFromCertificate(cert)
 
 		csrBytes, err = tglib.GenerateCSR(csr, key)
 		if err != nil {
-			return fmt.Errorf("Unable to create csr: %s", err.Error())
+			return fmt.Errorf("unable to create csr: %s", err.Error())
 		}
 	}
 
@@ -384,16 +384,16 @@ func SignCSR(
 
 	signingCertData, err := ioutil.ReadFile(signingCertPath)
 	if err != nil {
-		return fmt.Errorf("Unable to load signing cert %s", signingCertPath)
+		return fmt.Errorf("unable to load signing cert %s", signingCertPath)
 	}
 	signingCertKeyData, err := ioutil.ReadFile(signingCertKeyPath)
 	if err != nil {
-		return fmt.Errorf("Unable to load signing cert key %s", signingCertKeyPath)
+		return fmt.Errorf("unable to load signing cert key %s", signingCertKeyPath)
 	}
 
 	signingCert, signingKey, err := tglib.ReadCertificate(signingCertData, signingCertKeyData, signingCertKeyPass)
 	if err != nil {
-		return fmt.Errorf("Unable to read signing cert: %s", err.Error())
+		return fmt.Errorf("unable to read signing cert: %s", err.Error())
 	}
 
 	var signalg x509.SignatureAlgorithm
@@ -436,11 +436,11 @@ func SignCSR(
 
 		csrData, err := ioutil.ReadFile(path)
 		if err != nil {
-			return fmt.Errorf("Unable to load csr %s", path)
+			return fmt.Errorf("unable to load csr %s", path)
 		}
 		csrs, err := tglib.LoadCSRs(csrData)
 		if err != nil {
-			return fmt.Errorf("Unable to parse csr %s", path)
+			return fmt.Errorf("unable to parse csr %s", path)
 		}
 
 		for _, csr := range csrs {
@@ -458,7 +458,7 @@ func SignCSR(
 				asnIdentifiers,
 			)
 			if err != nil {
-				return fmt.Errorf("Unable to sign certificate: %s", err.Error())
+				return fmt.Errorf("unable to sign certificate: %s", err.Error())
 			}
 
 			if err = ioutil.WriteFile(
@@ -600,7 +600,7 @@ func makePolicies(originalPolicies []string) ([]asn1.ObjectIdentifier, error) {
 		for _, part := range parts {
 			n, e := strconv.Atoi(part)
 			if e != nil {
-				return nil, fmt.Errorf("Given policy OID %s is invalid", kv)
+				return nil, fmt.Errorf("given policy OID %s is invalid", kv)
 			}
 			oid = append(oid, n)
 		}

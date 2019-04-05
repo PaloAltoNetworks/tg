@@ -226,7 +226,7 @@ func ReadCertificates(certPemBytes []byte, keyPemBytes []byte, password string) 
 			return nil, nil, fmt.Errorf("failed to unmarshal private key: %s", err)
 		}
 	default:
-		return nil, nil, fmt.Errorf("Unsuported private key type: %s", keyBlock.Type)
+		return nil, nil, fmt.Errorf("unsuported private key type: %s", keyBlock.Type)
 	}
 
 	return x509certs, key, nil
