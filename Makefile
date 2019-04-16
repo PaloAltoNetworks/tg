@@ -15,14 +15,16 @@ ci: init lint test codecov build_linux build_darwin build_windows package
 	if [[ -f Gopkg.toml ]] ; then cp Gopkg.toml artifacts/ ; fi
 	if [[ -f Gopkg.lock ]] ; then cp Gopkg.lock artifacts/ ; fi
 	if [[ -d build/ ]] ; then cp -r build/ artifacts/build/ ; fi
-	# go get ./...
-	dep ensure
-	dep status
 
 init:
+	go get -u github.com/aporeto-inc/go-bindata/...
+	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
+	dep ensure
+	dep status || true
 	go generate ./...
 
 lint:
+	# --enable=unparam
 	golangci-lint run \
 		--deadline=3m \
 		--disable-all \
@@ -41,7 +43,6 @@ lint:
 		--enable=gosimple \
 		--enable=misspell \
 		--enable=staticcheck \
-		--enable=unparam \
 		--enable=prealloc \
 		--enable=nakedret \
 		--enable=typecheck \
