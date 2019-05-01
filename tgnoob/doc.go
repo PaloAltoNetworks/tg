@@ -9,9 +9,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tgnoob
-
-const (
-	algoECDSA = "ecdsa"
-	algoRSA   = "rsa"
-)
+// Package tgnoob is depreacted and shold not be used.
+package tgnoob // import "go.aporeto.io/tg/tgnoob"
