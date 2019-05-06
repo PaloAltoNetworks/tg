@@ -11,4 +11,4 @@
 
 // Package tg contains a cli using tglib that provides an
 // easy interface to deal with x509 certificates.
-package tg // import "go.aporeto.io/tg"
+package main
