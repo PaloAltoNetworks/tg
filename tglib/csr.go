@@ -53,7 +53,7 @@ func GenerateSimpleCSR(orgs []string, units []string, commonName string, emails 
 	switch privateKey.(type) {
 	case *ecdsa.PrivateKey:
 		alg = x509.ECDSAWithSHA384
-	case rsa.PrivateKey:
+	case *rsa.PrivateKey:
 		alg = x509.SHA384WithRSA
 	default:
 		return nil, fmt.Errorf("unsupported private key type")
