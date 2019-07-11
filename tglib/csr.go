@@ -21,7 +21,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"math/big"
-	"reflect"
 )
 
 // LoadCSRs loads the given bytes as an array of Certificate Signing Request.
@@ -51,10 +50,10 @@ func GenerateSimpleCSR(orgs []string, units []string, commonName string, emails 
 
 	var alg x509.SignatureAlgorithm
 
-	switch reflect.TypeOf(privateKey) {
-	case reflect.TypeOf(&ecdsa.PrivateKey{}):
+	switch privateKey.(type) {
+	case *ecdsa.PrivateKey:
 		alg = x509.ECDSAWithSHA384
-	case reflect.TypeOf(&rsa.PrivateKey{}):
+	case rsa.PrivateKey:
 		alg = x509.SHA384WithRSA
 	default:
 		return nil, fmt.Errorf("unsupported private key type")
