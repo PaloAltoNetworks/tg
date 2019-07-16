@@ -13,7 +13,9 @@ package tglib
 
 import (
 	"crypto"
+	"crypto/ecdsa"
 	"crypto/rand"
+	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
@@ -46,6 +48,17 @@ func LoadCSRs(csrData []byte) ([]*x509.CertificateRequest, error) {
 // GenerateSimpleCSR generate a CSR using the given parameters.
 func GenerateSimpleCSR(orgs []string, units []string, commonName string, emails []string, privateKey crypto.PrivateKey) ([]byte, error) {
 
+	var alg x509.SignatureAlgorithm
+
+	switch privateKey.(type) {
+	case *ecdsa.PrivateKey:
+		alg = x509.ECDSAWithSHA384
+	case *rsa.PrivateKey:
+		alg = x509.SHA384WithRSA
+	default:
+		return nil, fmt.Errorf("unsupported private key type")
+	}
+
 	csr := &x509.CertificateRequest{
 		Subject: pkix.Name{
 			CommonName:         commonName,
@@ -53,7 +66,7 @@ func GenerateSimpleCSR(orgs []string, units []string, commonName string, emails 
 			OrganizationalUnit: units,
 		},
 		EmailAddresses:     emails,
-		SignatureAlgorithm: x509.ECDSAWithSHA384,
+		SignatureAlgorithm: alg,
 	}
 
 	return GenerateCSR(csr, privateKey)
@@ -61,6 +74,7 @@ func GenerateSimpleCSR(orgs []string, units []string, commonName string, emails 
 
 // GenerateCSRwithSANs generates a SPIFFE certificate CSR.
 func GenerateCSRwithSANs(orgs []string, units []string, commonName string, sans []string, privateKey crypto.PrivateKey) ([]byte, error) {
+
 	csr := &x509.CertificateRequest{
 		Subject: pkix.Name{
 			CommonName:         commonName,
