@@ -5,6 +5,9 @@ PROJECT_SHA ?= $(shell git rev-parse HEAD)
 PROJECT_VERSION ?= $(lastword $(shell git tag --sort version:refname --merged $(shell git rev-parse --abbrev-ref HEAD)))
 PROJECT_RELEASE ?= dev
 
+# Until we support go.mod properly
+export GO111MODULE = off
+
 ci: init lint test codecov build_linux build_darwin build_windows package
 	@echo "ci artifacts dir layout: https://github.com/aporeto-inc/builder/wiki#dir-layout"
 	mkdir -p artifacts/
