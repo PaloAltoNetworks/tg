@@ -5,7 +5,6 @@ PROJECT_SHA ?= $(shell git rev-parse HEAD)
 PROJECT_VERSION ?= $(lastword $(shell git tag --sort version:refname --merged $(shell git rev-parse --abbrev-ref HEAD)))
 PROJECT_RELEASE ?= dev
 
-# Until we support go.mod properly
 export GO111MODULE = on
 
 ci: init lint test codecov build_linux build_darwin build_windows package
@@ -15,8 +14,6 @@ ci: init lint test codecov build_linux build_darwin build_windows package
 	echo "$(PROJECT_VERSION)" > artifacts/src_semver
 	echo "$(PROJECT_BRANCH)" > artifacts/src_branch
 	if [[ -d docker/ ]] ; then cp -r docker/ artifacts/docker/ ; fi
-	if [[ -f Gopkg.toml ]] ; then cp Gopkg.toml artifacts/ ; fi
-	if [[ -f Gopkg.lock ]] ; then cp Gopkg.lock artifacts/ ; fi
 	if [[ -d build/ ]] ; then cp -r build/ artifacts/build/ ; fi
 
 init:
