@@ -6,7 +6,7 @@ PROJECT_VERSION ?= $(lastword $(shell git tag --sort version:refname --merged $(
 PROJECT_RELEASE ?= dev
 
 # Until we support go.mod properly
-export GO111MODULE = off
+export GO111MODULE = on
 
 ci: init lint test codecov build_linux build_darwin build_windows package
 	@echo "ci artifacts dir layout: https://github.com/aporeto-inc/builder/wiki#dir-layout"
@@ -20,10 +20,8 @@ ci: init lint test codecov build_linux build_darwin build_windows package
 	if [[ -d build/ ]] ; then cp -r build/ artifacts/build/ ; fi
 
 init:
-	go get -u github.com/aporeto-inc/go-bindata/...
-	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
-	dep ensure
-	dep status || true
+	GO111MODULE=off go get -u github.com/aporeto-inc/go-bindata/...
+	GO111MODULE=off go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
 	go generate ./...
 
 lint:
