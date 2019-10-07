@@ -7,7 +7,7 @@ PROJECT_RELEASE ?= dev
 
 export GO111MODULE = on
 
-ci: init lint test codecov build_linux build_darwin build_windows package
+ci: lint test codecov build_linux build_darwin build_windows package
 	@echo "ci artifacts dir layout: https://github.com/aporeto-inc/builder/wiki#dir-layout"
 	mkdir -p artifacts/
 	echo "$(PROJECT_SHA)" > artifacts/src_sha
@@ -16,8 +16,6 @@ ci: init lint test codecov build_linux build_darwin build_windows package
 	if [[ -d docker/ ]] ; then cp -r docker/ artifacts/docker/ ; fi
 	if [[ -d build/ ]] ; then cp -r build/ artifacts/build/ ; fi
 
-init:
-	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
 lint:
 	# --enable=unparam
