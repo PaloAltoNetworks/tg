@@ -17,8 +17,7 @@ ci: init lint test codecov build_linux build_darwin build_windows package
 	if [[ -d build/ ]] ; then cp -r build/ artifacts/build/ ; fi
 
 init:
-	GO111MODULE=off go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
-	go generate ./...
+	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
 lint:
 	# --enable=unparam
