@@ -12,7 +12,7 @@ before_install:
 - go get -u github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
 script:
-  - make
+- make
 
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
+- bash <(curl -s https://codecov.io/bash)
