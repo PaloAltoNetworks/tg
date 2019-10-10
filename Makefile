@@ -27,12 +27,3 @@ lint:
 
 test:
 	go test ./... -race -cover -covermode=atomic -coverprofile=unit_coverage.cov
-
-build:
-	CGO_ENABLED=0 go build
-
-build_linux:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build
-
-build_darwin:
-	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build
