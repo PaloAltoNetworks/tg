@@ -1,0 +1,36 @@
+language: go
+
+go:
+- 1.12.x
+- 1.13.x
+
+env:
+  global:
+  - GO111MODULE=on
+
+before_install:
+- go get -u github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+script:
+  - |
+    golangci-lint run \
+      --disable-all \
+      --exclude-use-default=false \
+      --enable=errcheck \
+      --enable=goimports \
+      --enable=ineffassign \
+      --enable=golint \
+      --enable=unused \
+      --enable=structcheck \
+      --enable=staticcheck \
+      --enable=varcheck \
+      --enable=deadcode \
+      --enable=unconvert \
+      --enable=misspell \
+      --enable=prealloc \
+      --enable=nakedret \
+      ./...
+  - go test ./... -race -cover -covermode=atomic -coverprofile=unit_coverage.cov
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
