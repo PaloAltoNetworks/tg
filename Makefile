@@ -3,7 +3,7 @@ SHELL := /bin/bash -o pipefail
 
 export GO111MODULE = on
 
-default: lint test
+default: lint test sec
 
 lint:
 	golangci-lint run \
@@ -27,3 +27,6 @@ lint:
 
 test:
 	go test ./... -race -cover -covermode=atomic -coverprofile=unit_coverage.cov
+
+sec:
+	gosec -quiet -exclude=G304 ./...

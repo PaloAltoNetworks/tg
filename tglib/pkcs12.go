@@ -22,17 +22,17 @@ import (
 // GeneratePKCS12FromFiles generates a full PKCS certificate based on the input keys.
 func GeneratePKCS12FromFiles(out, certPath, keyPath, caPath, passphrase string) error {
 
-	args := []string{
+	/* #nosec */
+	return exec.Command(
+		"openssl",
 		"pkcs12",
 		"-export",
 		"-out", out,
 		"-inkey", keyPath,
 		"-in", certPath,
 		"-certfile", caPath,
-		"-passout", "pass:" + passphrase,
-	}
-
-	return exec.Command("openssl", args...).Run()
+		"-passout", "pass:"+passphrase,
+	).Run()
 }
 
 // GeneratePKCS12 generates a pkcs12
@@ -40,7 +40,7 @@ func GeneratePKCS12(cert []byte, key []byte, ca []byte, passphrase string) ([]by
 
 	// Some install like Docker Scratch doesn't have /tmp folder
 	if _, err := os.Stat("/tmp"); os.IsNotExist(err) {
-		if err = os.Mkdir("/tmp", 0777); err != nil {
+		if err = os.Mkdir("/tmp", 0750); err != nil {
 			panic(fmt.Sprintf("unable to create non-existing temp folder: %s", err))
 		}
 	}

@@ -168,7 +168,7 @@ func main() {
 		encryptCmd,
 	)
 
-	rootCmd.Execute() // nolint: errcheck
+	_ = rootCmd.Execute() // nolint: errcheck
 }
 
 func generateCertificate() {
