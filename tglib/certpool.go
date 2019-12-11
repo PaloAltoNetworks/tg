@@ -6,7 +6,7 @@ import (
 	"crypto/x509"
 )
 
-// GetSystemCertPool gets the system cert pool via Go libraries
-func GetSystemCertPool() (*x509.CertPool, error) {
+// SystemCertPool gets the system cert pool via Go libraries
+func SystemCertPool() (*x509.CertPool, error) {
 	return x509.SystemCertPool()
 }
