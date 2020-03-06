@@ -50,8 +50,12 @@ func GeneratePKCS12(cert []byte, key []byte, ca []byte, passphrase string) ([]by
 	if err != nil {
 		return nil, err
 	}
+	// #nosec G307
 	defer os.Remove(tmpcert.Name()) // nolint: errcheck
-	defer tmpcert.Close()           // nolint: errcheck
+
+	// #nosec G307
+	defer tmpcert.Close() // nolint: errcheck
+
 	if _, err = tmpcert.Write(cert); err != nil {
 		return nil, err
 	}
@@ -61,8 +65,13 @@ func GeneratePKCS12(cert []byte, key []byte, ca []byte, passphrase string) ([]by
 	if err != nil {
 		return nil, err
 	}
+
+	// #nosec G307
 	defer os.Remove(tmpkey.Name()) // nolint: errcheck
-	defer tmpkey.Close()           // nolint: errcheck
+
+	// #nosec G307
+	defer tmpkey.Close() // nolint: errcheck
+
 	if _, err = tmpkey.Write(key); err != nil {
 		return nil, err
 	}
@@ -72,8 +81,13 @@ func GeneratePKCS12(cert []byte, key []byte, ca []byte, passphrase string) ([]by
 	if err != nil {
 		return nil, err
 	}
+
+	// #nosec G307
 	defer os.Remove(tmpca.Name()) // nolint: errcheck
-	defer tmpca.Close()           // nolint: errcheck
+
+	// #nosec G307
+	defer tmpca.Close() // nolint: errcheck
+
 	if _, err = tmpca.Write(ca); err != nil {
 		return nil, err
 	}
@@ -83,8 +97,12 @@ func GeneratePKCS12(cert []byte, key []byte, ca []byte, passphrase string) ([]by
 	if err != nil {
 		return nil, err
 	}
+
+	// #nosec G307
 	defer os.Remove(tmpp12.Name()) // nolint: errcheck
-	defer tmpp12.Close()           // nolint: errcheck
+
+	// #nosec G307
+	defer tmpp12.Close() // nolint: errcheck
 
 	if err = GeneratePKCS12FromFiles(tmpp12.Name(), tmpcert.Name(), tmpkey.Name(), tmpca.Name(), passphrase); err != nil {
 		return nil, err

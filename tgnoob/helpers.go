@@ -163,7 +163,7 @@ func GenerateCertificate(
 	if err = ioutil.WriteFile(
 		keyOut,
 		pem.EncodeToMemory(priv),
-		0644,
+		0600,
 	); err != nil {
 		return fmt.Errorf("unable to write private key on file: %s", err.Error())
 	}
@@ -171,7 +171,7 @@ func GenerateCertificate(
 	if err = ioutil.WriteFile(
 		certOut,
 		pem.EncodeToMemory(pub),
-		0644,
+		0600,
 	); err != nil {
 		return fmt.Errorf("unable to write public key on file: %s", err.Error())
 	}
@@ -309,7 +309,7 @@ func GenerateCSR(
 		if err = ioutil.WriteFile(
 			keyOut,
 			pem.EncodeToMemory(keyBlock),
-			0644,
+			0600,
 		); err != nil {
 			return fmt.Errorf("unable to write private key on file: %s", err.Error())
 		}
@@ -341,7 +341,7 @@ func GenerateCSR(
 	if err := ioutil.WriteFile(
 		csrOut,
 		csrBytes,
-		0644,
+		0600,
 	); err != nil {
 		return fmt.Errorf("unable to write public key on file: %s", err.Error())
 	}
@@ -475,7 +475,7 @@ func SignCSR(
 			if err = ioutil.WriteFile(
 				certOut,
 				pem.EncodeToMemory(certBlock),
-				0644,
+				0600,
 			); err != nil {
 				return fmt.Errorf("unable to write certificate on file: %s", err.Error())
 			}
