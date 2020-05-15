@@ -166,7 +166,7 @@ func Sign(
 	}
 
 	if len(csr.Extensions) > 0 {
-		x509Cert.ExtraExtensions = append(x509Cert.Extensions, csr.Extensions...)
+		x509Cert.Extensions = append(x509Cert.Extensions, csr.Extensions...)
 	}
 
 	if len(csr.ExtraExtensions) > 0 {
