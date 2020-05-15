@@ -14,6 +14,7 @@ package tglib
 import (
 	"crypto"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/asn1"
 	"encoding/pem"
 	"net"
@@ -33,6 +34,8 @@ type issueCfg struct {
 	expiration         time.Time
 	keyUsage           x509.KeyUsage
 	extKeyUsage        []x509.ExtKeyUsage
+	extensions         []pkix.Extension
+	extraExtensions    []pkix.Extension
 	isCA               bool
 }
 
@@ -221,5 +224,19 @@ func OptIssueSignatureAlgorithm(alg x509.SignatureAlgorithm) IssueOption {
 func OptIssuePolicies(policies ...asn1.ObjectIdentifier) IssueOption {
 	return func(cfg *issueCfg) {
 		cfg.policies = policies
+	}
+}
+
+// OptIssueExtraExtensions sets the extra pkix.Extensions to use in the certificate.
+func OptIssueExtraExtensions(exts []pkix.Extension) IssueOption {
+	return func(cfg *issueCfg) {
+		cfg.extraExtensions = exts
+	}
+}
+
+// OptIssueExtensions sets the pkix.Extensions to use in the certificate.
+func OptIssueExtensions(exts []pkix.Extension) IssueOption {
+	return func(cfg *issueCfg) {
+		cfg.extensions = exts
 	}
 }
