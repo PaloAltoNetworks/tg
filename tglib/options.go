@@ -34,7 +34,6 @@ type issueCfg struct {
 	expiration         time.Time
 	keyUsage           x509.KeyUsage
 	extKeyUsage        []x509.ExtKeyUsage
-	extensions         []pkix.Extension
 	extraExtensions    []pkix.Extension
 	isCA               bool
 }
@@ -231,12 +230,5 @@ func OptIssuePolicies(policies ...asn1.ObjectIdentifier) IssueOption {
 func OptIssueExtraExtensions(exts []pkix.Extension) IssueOption {
 	return func(cfg *issueCfg) {
 		cfg.extraExtensions = exts
-	}
-}
-
-// OptIssueExtensions sets the pkix.Extensions to use in the certificate.
-func OptIssueExtensions(exts []pkix.Extension) IssueOption {
-	return func(cfg *issueCfg) {
-		cfg.extensions = exts
 	}
 }

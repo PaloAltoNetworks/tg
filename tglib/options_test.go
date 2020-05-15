@@ -193,10 +193,4 @@ func TestOptions(t *testing.T) {
 		OptIssueExtraExtensions([]pkix.Extension{{Id: asn1.ObjectIdentifier{1, 2, 3}, Value: []byte("v")}})(&cfg)
 		So(cfg.extraExtensions, ShouldResemble, []pkix.Extension{{Id: asn1.ObjectIdentifier{1, 2, 3}, Value: []byte("v")}})
 	})
-
-	Convey("OptIssueExtensions should work", t, func() {
-		cfg := newIssueCfg()
-		OptIssueExtensions([]pkix.Extension{{Id: asn1.ObjectIdentifier{1, 2, 3}, Value: []byte("v")}})(&cfg)
-		So(cfg.extensions, ShouldResemble, []pkix.Extension{{Id: asn1.ObjectIdentifier{1, 2, 3}, Value: []byte("v")}})
-	})
 }

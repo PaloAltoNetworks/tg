@@ -53,7 +53,7 @@ func TestIssue(t *testing.T) {
 				pkix.Name{CommonName: "my-cert"},
 				OptIssueSignerPEMBlock(cacert, cakey, ""),
 				OptIssueTypeServerAuth(),
-				OptIssueExtensions([]pkix.Extension{
+				OptIssueExtraExtensions([]pkix.Extension{
 					{
 						Id:    asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 50798, 1, 1},
 						Value: []byte("hello"),
