@@ -165,7 +165,7 @@ func Sign(
 		IsCA:                  cfg.isCA,
 	}
 
-	if csr.ExtraExtensions != nil && len(csr.ExtraExtensions) > 0 {
+	if len(csr.ExtraExtensions) > 0 {
 		x509Cert.ExtraExtensions = append(x509Cert.ExtraExtensions, csr.ExtraExtensions...)
 	}
 
