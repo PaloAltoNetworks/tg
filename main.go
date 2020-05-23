@@ -48,6 +48,7 @@ func addPKIXFlags(cmd *cobra.Command) {
 	cmd.Flags().StringSlice("address", nil, "Address that will be written the the subject.")
 	cmd.Flags().StringSlice("dns", nil, "List of alternate DNS names.")
 	cmd.Flags().StringSlice("ip", nil, "List of alternate ips.")
+	cmd.Flags().StringSlice("tags", nil, "List of tags.")
 }
 
 func addSigningFlags(cmd *cobra.Command) {
@@ -200,6 +201,7 @@ func generateCertificate() {
 		viper.GetStringSlice("org-unit"),
 		viper.GetStringSlice("dns"),
 		viper.GetStringSlice("ip"),
+		viper.GetStringSlice("tags"),
 		getValidity(viper.GetDuration("validity"), viper.GetBool("is-ca")),
 		viper.GetStringSlice("policy"),
 	); err != nil {

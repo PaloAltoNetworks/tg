@@ -51,6 +51,7 @@ func Test_GenerateCertificate(t *testing.T) {
 				[]string{},   // orgUnit
 				[]string{},   // dns
 				[]string{},   // ips
+				[]string{},   // tags
 				time.Second,  // duration
 				[]string{},   // policies
 			)
@@ -83,6 +84,7 @@ func Test_GenerateCertificate(t *testing.T) {
 				[]string{},   // orgUnit
 				[]string{},   // dns
 				[]string{},   // ips
+				[]string{},   // tags
 				time.Second,  // duration
 				[]string{},   // policies
 			)
