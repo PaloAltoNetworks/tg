@@ -65,6 +65,36 @@ func TestIssue(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 
+			Convey("When I verify the signature using a bad signing cert", func() {
+
+				err := Verify([]byte("sup?"), pem.EncodeToMemory(cert), nil)
+
+				Convey("Then err should be nil", func() {
+					So(err, ShouldNotBeNil)
+					So(err.Error(), ShouldEqual, `unable to append signing cert to the pool. api returned no specific reason`)
+				})
+			})
+
+			Convey("When I verify the signature using a cert data", func() {
+
+				err := Verify(pem.EncodeToMemory(cacert), []byte("sup?"), nil)
+
+				Convey("Then err should be nil", func() {
+					So(err, ShouldNotBeNil)
+					So(err.Error(), ShouldEqual, `invalid certificate data`)
+				})
+			})
+
+			Convey("When I verify the signature using a cert data content", func() {
+
+				err := Verify(pem.EncodeToMemory(cacert), pem.EncodeToMemory(&pem.Block{}), nil)
+
+				Convey("Then err should be nil", func() {
+					So(err, ShouldNotBeNil)
+					So(err.Error(), ShouldEqual, `unable to parse certificate: asn1: syntax error: sequence truncated`)
+				})
+			})
+
 			Convey("When I verify the signature for any usage", func() {
 
 				err := Verify(pem.EncodeToMemory(cacert), pem.EncodeToMemory(cert), nil)
