@@ -80,17 +80,17 @@ func Verify(signingCertPEMData []byte, certPEMData []byte, keyUsages []x509.ExtK
 	roots := x509.NewCertPool()
 	ok := roots.AppendCertsFromPEM(signingCertPEMData)
 	if !ok {
-		return fmt.Errorf("unable to parse signing certificate")
+		return fmt.Errorf("unable to append signing cert to the pool. api returned no specific reason")
 	}
 
 	block, rest := pem.Decode(certPEMData)
 	if block == nil || len(rest) != 0 {
-		return fmt.Errorf("invalid child certificate")
+		return fmt.Errorf("invalid certificate data")
 	}
 
 	x509Cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
-		return fmt.Errorf("unable to parse child certificate: %s", err)
+		return fmt.Errorf("unable to parse certificate: %s", err)
 	}
 
 	if keyUsages == nil {
