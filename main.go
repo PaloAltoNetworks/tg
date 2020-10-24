@@ -14,12 +14,14 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.aporeto.io/tg/tgnoob"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 func addOutputFlags(cmd *cobra.Command) {
@@ -188,7 +190,7 @@ func generateCertificate() {
 		viper.GetString("algo"),
 		viper.GetString("signing-cert"),
 		viper.GetString("signing-cert-key"),
-		viper.GetString("signing-cert-key-pass"),
+		getPass("Enter passphrase of the signing key: ", "signing-cert-key-pass"),
 		viper.GetStringSlice("country"),
 		viper.GetStringSlice("state"),
 		viper.GetStringSlice("city"),
@@ -214,7 +216,7 @@ func generateCSR() {
 		viper.GetString("common-name"),
 		viper.GetString("cert"),
 		viper.GetString("cert-key"),
-		viper.GetString("cert-key-pass"),
+		getPass("Enter passphrase for the signing key: ", viper.GetString("cert-key-pass")),
 		viper.GetString("out"),
 		viper.GetBool("force"),
 		viper.GetString("algo"),
@@ -248,7 +250,7 @@ func signCSR() {
 		viper.GetString("algo"),
 		viper.GetString("signing-cert"),
 		viper.GetString("signing-cert-key"),
-		viper.GetString("signing-cert-key-pass"),
+		getPass("Enter passphrase of the signing key: ", "signing-cert-key-pass"),
 		viper.GetStringSlice("csr"),
 		viper.GetDuration("validity"),
 		viper.GetStringSlice("policy"),
@@ -283,7 +285,7 @@ func decryptPrivateKey() {
 
 	if encodedPem, err = tgnoob.DecryptPrivateKey(
 		viper.GetString("key"),
-		viper.GetString("pass"),
+		getPass("Passphrase: ", "pass"),
 	); err != nil {
 		log.Fatalf("unable to decrypt private key: %s", err)
 	}
@@ -300,10 +302,32 @@ func encryptPrivateKey() {
 
 	if encodedPem, err = tgnoob.EncryptPrivateKey(
 		viper.GetString("key"),
-		viper.GetString("pass"),
+		getPass("Passphrase: ", "pass"),
 	); err != nil {
 		log.Fatalf("unable to encrypt private key: %s", err)
 	}
 
 	fmt.Printf("%s", encodedPem)
+}
+
+func getPass(title, key string) string {
+
+	pass := viper.GetString(key)
+
+	if pass != "" && pass != "-" {
+		return pass
+	}
+
+	if title != "" {
+		fmt.Fprint(os.Stderr, title) // nolint: errcheck
+	}
+
+	password, err := terminal.ReadPassword(int(os.Stdin.Fd()))
+	fmt.Fprint(os.Stderr, "\n") // nolint: errcheck
+
+	if err != nil {
+		panic("unable to read your information: %s")
+	}
+
+	return string(password)
 }
