@@ -21,7 +21,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.aporeto.io/tg/tgnoob"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 func addOutputFlags(cmd *cobra.Command) {
@@ -322,7 +322,7 @@ func getPass(title, key string) string {
 		fmt.Fprint(os.Stderr, title) // nolint: errcheck
 	}
 
-	password, err := terminal.ReadPassword(int(os.Stdin.Fd()))
+	password, err := term.ReadPassword(int(os.Stdin.Fd()))
 	fmt.Fprint(os.Stderr, "\n") // nolint: errcheck
 
 	if err != nil {
