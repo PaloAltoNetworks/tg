@@ -5,3 +5,4 @@ build
 *.cov
 artifacts/
 dist/
+/scripts/codecov
