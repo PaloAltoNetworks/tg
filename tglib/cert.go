@@ -198,7 +198,7 @@ func ReadCertificates(certPemBytes []byte, keyPemBytes []byte, password string) 
 		return nil, nil, fmt.Errorf("multiple private keys found: this is not supported")
 	}
 
-	if x509.IsEncryptedPEMBlock(keyBlock) {
+	if x509.IsEncryptedPEMBlock(keyBlock) { //nolint: staticcheck // This is deprecated but Go does not provide any alternative yet
 		var err error
 		keyBlock, err = DecryptPrivateKey(keyBlock, password)
 		if err != nil {
