@@ -55,7 +55,7 @@ func addSigningFlags(cmd *cobra.Command) {
 	cmd.Flags().String("signing-cert-key", "", "Path to the signing certificate key.")
 	cmd.Flags().String("signing-cert-key-pass", "", "PathPassword to decrypt the signing certificate key.")
 	cmd.Flags().StringSlice("policy", nil, "Additional policy extensions in the form --policy <OID>. Note that 1.3.6.1.4.1 is automatically added. Just start with your PEN number.")
-	cmd.Flags().Duration("validity", 86400*time.Hour, "Duration of the validity of the certificate.")
+	cmd.Flags().Duration("validity", 0, "Duration of the validity of the certificate. 0 means default: 1y for certificates, 10y for CAs")
 }
 
 func main() {
@@ -184,7 +184,7 @@ func generateCertificate() {
 		viper.GetBool("auth-client"),
 		viper.GetBool("auth-email"),
 		viper.GetBool("p12"),
-		viper.GetString("p12-pass"),
+		getPass("Enter p12 passphrase: ", "p12-pass"),
 		viper.GetString("out"),
 		viper.GetBool("force"),
 		viper.GetString("algo"),
@@ -200,7 +200,7 @@ func generateCertificate() {
 		viper.GetStringSlice("org-unit"),
 		viper.GetStringSlice("dns"),
 		viper.GetStringSlice("ip"),
-		viper.GetDuration("validity"),
+		getValidity(viper.GetDuration("validity"), viper.GetBool("is-ca")),
 		viper.GetStringSlice("policy"),
 	); err != nil {
 		log.Fatalf("could not generate certificate: %s", err)
@@ -252,7 +252,7 @@ func signCSR() {
 		viper.GetString("signing-cert-key"),
 		getPass("Enter passphrase of the signing key: ", "signing-cert-key-pass"),
 		viper.GetStringSlice("csr"),
-		viper.GetDuration("validity"),
+		getValidity(viper.GetDuration("validity"), false),
 		viper.GetStringSlice("policy"),
 	); err != nil {
 		log.Fatalf("could not sign csr: %s", err)
@@ -330,4 +330,17 @@ func getPass(title, key string) string {
 	}
 
 	return string(password)
+}
+
+func getValidity(duration time.Duration, isCA bool) time.Duration {
+
+	if duration != 0 {
+		return duration
+	}
+
+	if isCA {
+		return 86400 * time.Hour
+	}
+
+	return 8640 * time.Hour
 }
