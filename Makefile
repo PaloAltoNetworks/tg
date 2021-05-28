@@ -28,5 +28,8 @@ lint:
 test:
 	go test ./... -race -cover -covermode=atomic -coverprofile=unit_coverage.cov
 
+	@ echo "Converting the coverage file..."
+	gocov convert ./unit_coverage.cov | gocov-xml > ./coverage.xml
+
 sec:
 	gosec -quiet -exclude=G304 ./...
