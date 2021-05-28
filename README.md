@@ -1,6 +1,6 @@
 # tg
 
-[![codecov](https://codecov.io/gh/aporeto-inc/tg/branch/master/graph/badge.svg)](https://codecov.io/gh/aporeto-inc/tg)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/5c44c0a92a4e44959feccfd28f2b485a)](https://www.codacy.com/gh/PaloAltoNetworks/tg/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=PaloAltoNetworks/tg&amp;utm_campaign=Badge_Grade) [![Codacy Badge](https://app.codacy.com/project/badge/Coverage/5c44c0a92a4e44959feccfd28f2b485a)](https://www.codacy.com/gh/PaloAltoNetworks/tg/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=PaloAltoNetworks/tg&amp;utm_campaign=Badge_Coverage)
 
 tg (short for tlsgen, and also a french pun) makes issuing certificates easy. It only used the standard golang crypto lib (but for generating pkcs12, as go doesn't provide a way to write them. If you want the --p12 option to work, you need openssl installed.)
 
