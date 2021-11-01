@@ -5,6 +5,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/asn1"
 	"encoding/pem"
+	"math/big"
 	"net"
 	"testing"
 	"time"
@@ -130,10 +131,16 @@ func TestOptions(t *testing.T) {
 		So(cfg.ipAddresses, ShouldResemble, []net.IP{{1, 1, 1, 1}})
 	})
 
-	Convey("OptIssueIPSANs should work", t, func() {
+	Convey("OptIssueDNSSANs should work", t, func() {
 		cfg := newIssueCfg()
 		OptIssueDNSSANs("toto.com")(&cfg)
 		So(cfg.dnsNames, ShouldResemble, []string{"toto.com"})
+	})
+
+	Convey("OptIssueEmailAddresses should work", t, func() {
+		cfg := newIssueCfg()
+		OptIssueEmailAddresses([]string{"me@me.me"})(&cfg)
+		So(cfg.emailAddresses, ShouldResemble, []string{"me@me.me"})
 	})
 
 	Convey("OptIssueAlgorithmECDSA should work", t, func() {
@@ -192,5 +199,12 @@ func TestOptions(t *testing.T) {
 		cfg := newIssueCfg()
 		OptIssueExtraExtensions([]pkix.Extension{{Id: asn1.ObjectIdentifier{1, 2, 3}, Value: []byte("v")}})(&cfg)
 		So(cfg.extraExtensions, ShouldResemble, []pkix.Extension{{Id: asn1.ObjectIdentifier{1, 2, 3}, Value: []byte("v")}})
+	})
+
+	Convey("OptIssueSerialNumber should work", t, func() {
+		cfg := newIssueCfg()
+		sn := big.NewInt(42)
+		OptIssueSerialNumber(sn)(&cfg)
+		So(cfg.serialNumber, ShouldEqual, sn)
 	})
 }

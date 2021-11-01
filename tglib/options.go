@@ -17,6 +17,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/asn1"
 	"encoding/pem"
+	"math/big"
 	"net"
 	"time"
 )
@@ -30,12 +31,14 @@ type issueCfg struct {
 	policies           []asn1.ObjectIdentifier
 	dnsNames           []string
 	ipAddresses        []net.IP
+	emailAddresses     []string
 	beginning          time.Time
 	expiration         time.Time
 	keyUsage           x509.KeyUsage
 	extKeyUsage        []x509.ExtKeyUsage
 	extraExtensions    []pkix.Extension
 	isCA               bool
+	serialNumber       *big.Int
 }
 
 func newIssueCfg() issueCfg {
@@ -151,6 +154,13 @@ func OptIssueDNSSANs(dns ...string) IssueOption {
 	}
 }
 
+// OptIssueEmailAddresses sets the email addresses for the certificates to be issued.
+func OptIssueEmailAddresses(emails []string) IssueOption {
+	return func(cfg *issueCfg) {
+		cfg.emailAddresses = emails
+	}
+}
+
 // OptIssueAlgorithmECDSA configures the certificate to use ECDSA with SHA384 P256 curve.
 func OptIssueAlgorithmECDSA() IssueOption {
 	return func(cfg *issueCfg) {
@@ -230,5 +240,12 @@ func OptIssuePolicies(policies ...asn1.ObjectIdentifier) IssueOption {
 func OptIssueExtraExtensions(exts []pkix.Extension) IssueOption {
 	return func(cfg *issueCfg) {
 		cfg.extraExtensions = exts
+	}
+}
+
+// OptIssueSerialNumber sets the serial number to use for the certificate.
+func OptIssueSerialNumber(sn *big.Int) IssueOption {
+	return func(cfg *issueCfg) {
+		cfg.serialNumber = sn
 	}
 }

@@ -50,6 +50,7 @@ func Issue(subject pkix.Name, options ...IssueOption) (*pem.Block, *pem.Block, e
 		Subject:            subject,
 		DNSNames:           cfg.dnsNames,
 		IPAddresses:        cfg.ipAddresses,
+		EmailAddresses:     cfg.emailAddresses,
 		PublicKeyAlgorithm: cfg.publicKeyAlgorithm,
 		ExtraExtensions:    cfg.extraExtensions,
 		PublicKey:          pub,

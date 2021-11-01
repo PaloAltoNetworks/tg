@@ -137,9 +137,13 @@ func Sign(
 		option(&cfg)
 	}
 
-	sn, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
-	if err != nil {
-		return nil, "", err
+	sn := cfg.serialNumber
+	if sn == nil {
+		var err error
+		sn, err = rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
+		if err != nil {
+			return nil, "", err
+		}
 	}
 
 	x509Cert := &x509.Certificate{
@@ -158,6 +162,7 @@ func Sign(
 		DNSNames:              csr.DNSNames,
 		ExtKeyUsage:           cfg.extKeyUsage,
 		IPAddresses:           csr.IPAddresses,
+		EmailAddresses:        csr.EmailAddresses,
 		KeyUsage:              cfg.keyUsage,
 		NotAfter:              cfg.expiration,
 		NotBefore:             cfg.beginning,
