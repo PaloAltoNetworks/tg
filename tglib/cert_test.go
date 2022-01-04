@@ -91,7 +91,7 @@ func TestIssue(t *testing.T) {
 
 				Convey("Then err should be nil", func() {
 					So(err, ShouldNotBeNil)
-					So(err.Error(), ShouldEqual, `unable to parse certificate: asn1: syntax error: sequence truncated`)
+					So(err.Error(), ShouldEqual, `unable to parse certificate: x509: malformed certificate`)
 				})
 			})
 
@@ -216,7 +216,7 @@ dAj4VmjDEGz8NQisSQIgLTYqJrpjxT2/AQ7axw/GY2xl1CI43xpahnX+F0mq/tA=
 
 			Convey("Then err should not be nil", func() {
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldStartWith, "unable to parse certificate: asn1: structure error: tags don't match")
+				So(err.Error(), ShouldStartWith, "unable to parse certificate: x509: malformed certificate")
 			})
 
 			Convey("Then certs should be correct", func() {
@@ -716,7 +716,7 @@ kD9FCiA1tTNaFnOB5n/ct033vJR2H1lYgQ==
 
 			Convey("Then err should not be nil", func() {
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldEqual, "asn1: structure error: length too large")
+				So(err.Error(), ShouldEqual, "x509: malformed certificate")
 			})
 
 			Convey("Then certs should be correct", func() {
