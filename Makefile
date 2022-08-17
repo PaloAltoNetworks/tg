@@ -3,7 +3,7 @@ SHELL := /bin/bash -o pipefail
 
 export GO111MODULE = on
 
-default: lint test sec
+default: lint test
 
 lint:
 	golangci-lint run \
@@ -12,7 +12,7 @@ lint:
 		--enable=errcheck \
 		--enable=goimports \
 		--enable=ineffassign \
-		--enable=golint \
+		--enable=revive \
 		--enable=unused \
 		--enable=structcheck \
 		--enable=staticcheck \
