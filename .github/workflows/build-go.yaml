@@ -22,31 +22,24 @@ jobs:
           - 1.18
           - 1.19
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go }}
+          cache: true
 
       - name: setup
         run: |
-          go version
-          go install github.com/securego/gosec/cmd/gosec@latest
-          #go get golang.org/x/tools/cmd/cover
-          go install github.com/axw/gocov/gocov@latest
-          go install github.com/AlekSi/gocov-xml@latest
           go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
       - name: build
         run: |
           make
 
-      # note: uncertain how gracefully this handles the matrix
-      # note: I disabled this because codacy returns a 502
-      # - name: coverage
-      #   uses: codacy/codacy-coverage-reporter-action@v1
-      #   with:
-      #     project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
-
-      #     # a comma-separated list
-      #     coverage-reports: "./coverage.xml"
+      - uses: PaloAltoNetworks/cov@1.0.0
+        if: ${{matrix.go == 1.19}}
+        with:
+          main_branch: master
+          cov_file: unit_coverage.out
+          cov_threshold: "45"

@@ -2,6 +2,6 @@ tg
 *.pem
 build
 
-*.cov
+unit_coverage.out
 artifacts/
 dist/
