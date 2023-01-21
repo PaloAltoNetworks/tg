@@ -24,3 +24,7 @@ archives:
     format: binary
     builds:
     - tg
+
+signs:
+  - artifacts: checksum
+    args: ["-u", "0C3214A61024881F5CA1F5F056EDB08A11DCE325", "--output", "${signature}", "--detach-sign", "${artifact}"]
