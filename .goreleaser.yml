@@ -1,5 +1,3 @@
-build:
-  skip: true
 snapshot:
   name_template: "{{ .Tag }}-next"
 changelog:
@@ -8,3 +6,25 @@ changelog:
     exclude:
     - '^docs:'
     - '^test:'
+    - '^examples:'
+builds:
+  - id: tg
+    binary: tg
+    goos:
+    - linux
+    - freebsd
+    - darwin
+    goarch:
+    - amd64
+    env:
+    - CGO_ENABLED=0
+
+archives:
+  - id: tg
+    format: binary
+    builds:
+    - tg
+
+signs:
+  - artifacts: checksum
+    args: ["-u", "0C3214A61024881F5CA1F5F056EDB08A11DCE325", "--output", "${signature}", "--detach-sign", "${artifact}"]
