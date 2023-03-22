@@ -523,11 +523,7 @@ func VerifyCert(
 		extKeyUsage = append(extKeyUsage, x509.ExtKeyUsageEmailProtection)
 	}
 
-	if err := tglib.Verify(signerData, certData, extKeyUsage); err != nil {
-		return err
-	}
-
-	return nil
+	return tglib.Verify(signerData, certData, extKeyUsage)
 }
 
 // DecryptPrivateKey decrypts a private key.

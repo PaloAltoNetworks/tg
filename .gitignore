@@ -3,5 +3,6 @@ tg
 build
 
 unit_coverage.out
+cov.report
 artifacts/
 dist/

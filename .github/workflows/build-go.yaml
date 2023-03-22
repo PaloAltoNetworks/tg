@@ -19,8 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         go:
-          - 1.18
-          - 1.19
+          - "1.20"
     steps:
       - uses: actions/checkout@v3
 
@@ -37,9 +36,9 @@ jobs:
         run: |
           make
 
-      - uses: PaloAltoNetworks/cov@1.0.0
-        if: ${{matrix.go == 1.19}}
+      - uses: PaloAltoNetworks/cov@3.0.0
         with:
           main_branch: master
           cov_file: unit_coverage.out
           cov_threshold: "45"
+          cov_mode: coverage
