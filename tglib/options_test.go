@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	//revive:disable-next-line:dot-imports
 	. "github.com/smartystreets/goconvey/convey"
 )
 

@@ -12,18 +12,18 @@
 package tgnoob
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
 
+	//revive:disable-next-line:dot-imports
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func Test_GenerateCertificate(t *testing.T) {
 	Convey("Given an outputfolder", t, func() {
 
-		outputFolder, _ := ioutil.TempDir("", "certificates")
+		outputFolder, _ := os.MkdirTemp("", "certificates")
 
 		Convey("If no name is provided, it should fail", func() {
 			err := GenerateCertificate(
@@ -97,7 +97,7 @@ func Test_GenerateCertificate(t *testing.T) {
 func Test_GenerateCSR(t *testing.T) {
 	Convey("Given an outputfolder", t, func() {
 
-		outputFolder, _ := ioutil.TempDir("", "certificates")
+		outputFolder, _ := os.MkdirTemp("", "certificates")
 
 		Convey("I should be able to generate a csr with a certificate", func() {
 

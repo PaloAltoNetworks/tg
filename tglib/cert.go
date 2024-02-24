@@ -20,7 +20,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
+	"os"
 )
 
 // Issue issues a new x509 certificate
@@ -157,7 +157,7 @@ func ParseCertificates(certPemBytes []byte) ([]*x509.Certificate, error) {
 // and returns the first *x509.Certificate found
 func ParseCertificatePEM(path string) (*x509.Certificate, error) {
 
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read pem file: %s", err)
 	}
@@ -169,7 +169,7 @@ func ParseCertificatePEM(path string) (*x509.Certificate, error) {
 // and returns the a []*x509.Certificate.
 func ParseCertificatePEMs(path string) ([]*x509.Certificate, error) {
 
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read pem file: %s", err)
 	}
@@ -261,12 +261,12 @@ func ReadCertificatePEM(certPath, keyPath, password string) (*x509.Certificate, 
 // and decrypts it with the given password if needed.
 func ReadCertificatePEMs(certPath, keyPath, password string) ([]*x509.Certificate, crypto.PrivateKey, error) {
 
-	certPemBytes, err := ioutil.ReadFile(certPath)
+	certPemBytes, err := os.ReadFile(certPath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to read cert pem file: %s", err)
 	}
 
-	keyPemBytes, err := ioutil.ReadFile(keyPath)
+	keyPemBytes, err := os.ReadFile(keyPath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to read key pem file: %s", err)
 	}
