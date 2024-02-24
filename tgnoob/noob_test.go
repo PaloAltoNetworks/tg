@@ -12,7 +12,6 @@
 package tgnoob
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -22,7 +21,7 @@ import (
 func Test_CreateCA(t *testing.T) {
 	Convey("Given an outputfolder", t, func() {
 
-		outputFolder, _ := ioutil.TempDir("", "certificates")
+		outputFolder, _ := os.MkdirTemp("", "certificates")
 
 		Convey("I should be able to generate a certificate authority", func() {
 			certPath, keyPath, err := CreateCA("ca-acme", "acme", "", outputFolder)
@@ -47,7 +46,7 @@ func Test_CreateCertificates(t *testing.T) {
 
 		var err error
 
-		outputFolder, _ := ioutil.TempDir("", "certificates")
+		outputFolder, _ := os.MkdirTemp("", "certificates")
 		singingCertPath, signingCertKeyPath, err := CreateCA("ca-acme", "acme", "passwd", outputFolder)
 		So(err, ShouldBeNil)
 

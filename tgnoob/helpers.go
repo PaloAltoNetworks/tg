@@ -17,7 +17,6 @@ import (
 	"encoding/asn1"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"path"
@@ -160,7 +159,7 @@ func GenerateCertificate(
 		}
 	}
 
-	if err = ioutil.WriteFile(
+	if err = os.WriteFile(
 		keyOut,
 		pem.EncodeToMemory(priv),
 		0600,
@@ -168,7 +167,7 @@ func GenerateCertificate(
 		return fmt.Errorf("unable to write private key on file: %s", err.Error())
 	}
 
-	if err = ioutil.WriteFile(
+	if err = os.WriteFile(
 		certOut,
 		pem.EncodeToMemory(pub),
 		0600,
@@ -306,7 +305,7 @@ func GenerateCSR(
 			return fmt.Errorf("unable to create csr: %s", err.Error())
 		}
 
-		if err = ioutil.WriteFile(
+		if err = os.WriteFile(
 			keyOut,
 			pem.EncodeToMemory(keyBlock),
 			0600,
@@ -316,11 +315,11 @@ func GenerateCSR(
 
 	} else {
 
-		certData, err := ioutil.ReadFile(cert)
+		certData, err := os.ReadFile(cert)
 		if err != nil {
 			return fmt.Errorf("unable to load cert %s: %s", certKey, err.Error())
 		}
-		certKeyData, err := ioutil.ReadFile(certKey)
+		certKeyData, err := os.ReadFile(certKey)
 		if err != nil {
 			return fmt.Errorf("unable to load cert key %s: %s", certKey, err.Error())
 		}
@@ -338,7 +337,7 @@ func GenerateCSR(
 		}
 	}
 
-	if err := ioutil.WriteFile(
+	if err := os.WriteFile(
 		csrOut,
 		csrBytes,
 		0600,
@@ -393,11 +392,11 @@ func SignCSR(
 		return fmt.Errorf("destination file %s already exists. Use --force to overwrite", certOut)
 	}
 
-	signingCertData, err := ioutil.ReadFile(signingCertPath)
+	signingCertData, err := os.ReadFile(signingCertPath)
 	if err != nil {
 		return fmt.Errorf("unable to load signing cert %s", signingCertPath)
 	}
-	signingCertKeyData, err := ioutil.ReadFile(signingCertKeyPath)
+	signingCertKeyData, err := os.ReadFile(signingCertKeyPath)
 	if err != nil {
 		return fmt.Errorf("unable to load signing cert key %s", signingCertKeyPath)
 	}
@@ -445,7 +444,7 @@ func SignCSR(
 
 	for _, path := range csr {
 
-		csrData, err := ioutil.ReadFile(path)
+		csrData, err := os.ReadFile(path)
 		if err != nil {
 			return fmt.Errorf("unable to load csr %s", path)
 		}
@@ -472,7 +471,7 @@ func SignCSR(
 				return fmt.Errorf("unable to sign certificate: %s", err.Error())
 			}
 
-			if err = ioutil.WriteFile(
+			if err = os.WriteFile(
 				certOut,
 				pem.EncodeToMemory(certBlock),
 				0600,
@@ -502,12 +501,12 @@ func VerifyCert(
 		return fmt.Errorf("you must specify at a signer cert via --signer")
 	}
 
-	certData, err := ioutil.ReadFile(certPath)
+	certData, err := os.ReadFile(certPath)
 	if err != nil {
 		return fmt.Errorf("certificate doesn't exist")
 	}
 
-	signerData, err := ioutil.ReadFile(signerPath)
+	signerData, err := os.ReadFile(signerPath)
 	if err != nil {
 		return fmt.Errorf("signing certificate doesn't existexist")
 	}
@@ -540,7 +539,7 @@ func DecryptPrivateKey(
 		return nil, fmt.Errorf("you must specify the key password --pass")
 	}
 
-	keyData, err := ioutil.ReadFile(certKeyPath)
+	keyData, err := os.ReadFile(certKeyPath)
 	if err != nil {
 		return nil, fmt.Errorf("private key doesn't exist")
 	}
@@ -567,7 +566,7 @@ func EncryptPrivateKey(
 		return nil, fmt.Errorf("you must specify the key password --pass")
 	}
 
-	keyData, err := ioutil.ReadFile(certKeyPath)
+	keyData, err := os.ReadFile(certKeyPath)
 	if err != nil {
 		return nil, fmt.Errorf("private key doesn't exist")
 	}
