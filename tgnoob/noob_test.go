@@ -15,6 +15,7 @@ import (
 	"os"
 	"testing"
 
+	//revive:disable-next-line:dot-imports
 	. "github.com/smartystreets/goconvey/convey"
 )
 
