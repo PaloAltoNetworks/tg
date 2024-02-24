@@ -17,6 +17,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 // GeneratePKCS12FromFiles generates a full PKCS certificate based on the input keys.
@@ -50,13 +51,11 @@ func GeneratePKCS12(cert []byte, key []byte, ca []byte, passphrase string) ([]by
 	if err != nil {
 		return nil, err
 	}
-	// #nosec G307
-	defer os.Remove(tmpcert.Name()) // nolint: errcheck
 
 	// #nosec G307
-	defer tmpcert.Close() // nolint: errcheck
+	defer os.RemoveAll(tmpcert) // nolint: errcheck
 
-	if _, err = tmpcert.Write(cert); err != nil {
+	if err = os.WriteFile(tmpcert, cert, 0666); err != nil {
 		return nil, err
 	}
 
@@ -67,12 +66,9 @@ func GeneratePKCS12(cert []byte, key []byte, ca []byte, passphrase string) ([]by
 	}
 
 	// #nosec G307
-	defer os.Remove(tmpkey.Name()) // nolint: errcheck
+	defer os.RemoveAll(tmpkey) // nolint: errcheck
 
-	// #nosec G307
-	defer tmpkey.Close() // nolint: errcheck
-
-	if _, err = tmpkey.Write(key); err != nil {
+	if err = os.WriteFile(tmpkey, key, 0666); err != nil {
 		return nil, err
 	}
 
@@ -83,12 +79,9 @@ func GeneratePKCS12(cert []byte, key []byte, ca []byte, passphrase string) ([]by
 	}
 
 	// #nosec G307
-	defer os.Remove(tmpca.Name()) // nolint: errcheck
+	defer os.RemoveAll(tmpca) // nolint: errcheck
 
-	// #nosec G307
-	defer tmpca.Close() // nolint: errcheck
-
-	if _, err = tmpca.Write(ca); err != nil {
+	if err = os.WriteFile(tmpca, ca, 0666); err != nil {
 		return nil, err
 	}
 
@@ -99,16 +92,15 @@ func GeneratePKCS12(cert []byte, key []byte, ca []byte, passphrase string) ([]by
 	}
 
 	// #nosec G307
-	defer os.Remove(tmpp12.Name()) // nolint: errcheck
+	defer os.RemoveAll(tmpp12) // nolint: errcheck
 
-	// #nosec G307
-	defer tmpp12.Close() // nolint: errcheck
-
-	if err = GeneratePKCS12FromFiles(tmpp12.Name(), tmpcert.Name(), tmpkey.Name(), tmpca.Name(), passphrase); err != nil {
+	if err = GeneratePKCS12FromFiles(tmpp12, tmpcert, tmpkey, tmpca, passphrase); err != nil {
 		return nil, err
 	}
 
-	p12data, err := io.ReadAll(tmpp12)
+	tmpp12Reader := strings.NewReader(tmpp12)
+
+	p12data, err := io.ReadAll(tmpp12Reader)
 	if err != nil {
 		return nil, err
 	}
