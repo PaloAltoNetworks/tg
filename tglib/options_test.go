@@ -1,6 +1,7 @@
 package tglib
 
 import (
+	"crypto"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/asn1"
@@ -36,8 +37,21 @@ jZ7+vfcb7DOUipFzcwD75nkbLjANhxzg6Q==
 func TestOptions(t *testing.T) {
 
 	Convey("newIssueCfg should work", t, func() {
+
+		orig := ecPrivateKeyGenerator
+		defer func() { ecPrivateKeyGenerator = orig }()
+
+		called := false
+		ecPrivateKeyGenerator = func() (crypto.PrivateKey, error) {
+			called = true
+			return nil, nil
+		}
+
 		cfg := newIssueCfg()
-		So(cfg.keyGen, ShouldEqual, ECPrivateKeyGenerator)
+
+		_, _ = cfg.keyGen()
+		So(called, ShouldEqual, true)
+
 		So(cfg.signatureAlgorithm, ShouldEqual, x509.ECDSAWithSHA384)
 		So(cfg.publicKeyAlgorithm, ShouldEqual, x509.ECDSA)
 		So(cfg.beginning.Unix(), ShouldBeLessThan, time.Now().Unix())
@@ -145,17 +159,42 @@ func TestOptions(t *testing.T) {
 	})
 
 	Convey("OptIssueAlgorithmECDSA should work", t, func() {
+
+		orig := ecPrivateKeyGenerator
+		defer func() { ecPrivateKeyGenerator = orig }()
+
+		called := false
+		ecPrivateKeyGenerator = func() (crypto.PrivateKey, error) {
+			called = true
+			return nil, nil
+		}
+
 		cfg := newIssueCfg()
 		OptIssueAlgorithmECDSA()(&cfg)
-		So(cfg.keyGen, ShouldEqual, ECPrivateKeyGenerator)
+
+		_, _ = cfg.keyGen()
+		So(called, ShouldEqual, true)
+
 		So(cfg.signatureAlgorithm, ShouldEqual, x509.ECDSAWithSHA384)
 		So(cfg.publicKeyAlgorithm, ShouldEqual, x509.ECDSA)
 	})
 
 	Convey("OptIssueAlgorithmRSA should work", t, func() {
+		orig := rsaPrivateKeyGenerator
+		defer func() { rsaPrivateKeyGenerator = orig }()
+
+		called := false
+		rsaPrivateKeyGenerator = func() (crypto.PrivateKey, error) {
+			called = true
+			return nil, nil
+		}
+
 		cfg := newIssueCfg()
 		OptIssueAlgorithmRSA()(&cfg)
-		So(cfg.keyGen, ShouldEqual, RSAPrivateKeyGenerator)
+
+		_, _ = cfg.keyGen()
+		So(called, ShouldEqual, true)
+
 		So(cfg.signatureAlgorithm, ShouldEqual, x509.SHA384WithRSA)
 		So(cfg.publicKeyAlgorithm, ShouldEqual, x509.RSA)
 	})
@@ -173,9 +212,15 @@ func TestOptions(t *testing.T) {
 	})
 
 	Convey("OptIssueKeyGenerator should work", t, func() {
+		called := false
+		testKeyGenerator := func() (crypto.PrivateKey, error) {
+			called = true
+			return nil, nil
+		}
 		cfg := newIssueCfg()
-		OptIssueKeyGenerator(RSAPrivateKeyGenerator)(&cfg)
-		So(cfg.keyGen, ShouldEqual, RSAPrivateKeyGenerator)
+		OptIssueKeyGenerator(testKeyGenerator)(&cfg)
+		_, _ = cfg.keyGen()
+		So(called, ShouldEqual, true)
 	})
 
 	Convey("OptIssuePublicKeyAlgorithm should work", t, func() {
