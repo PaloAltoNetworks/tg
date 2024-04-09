@@ -43,7 +43,7 @@ type issueCfg struct {
 
 func newIssueCfg() issueCfg {
 	return issueCfg{
-		keyGen:             ECPrivateKeyGenerator,
+		keyGen:             ecPrivateKeyGenerator,
 		signatureAlgorithm: x509.ECDSAWithSHA384,
 		publicKeyAlgorithm: x509.ECDSA,
 		beginning:          time.Now().Add(-1 * time.Hour),
@@ -164,7 +164,7 @@ func OptIssueEmailAddresses(emails []string) IssueOption {
 // OptIssueAlgorithmECDSA configures the certificate to use ECDSA with SHA384 P256 curve.
 func OptIssueAlgorithmECDSA() IssueOption {
 	return func(cfg *issueCfg) {
-		OptIssueKeyGenerator(ECPrivateKeyGenerator)(cfg)
+		OptIssueKeyGenerator(ecPrivateKeyGenerator)(cfg)
 		OptIssueSignatureAlgorithm(x509.ECDSAWithSHA384)(cfg)
 		OptIssuePublicKeyAlgorithm(x509.ECDSA)(cfg)
 	}
@@ -173,7 +173,7 @@ func OptIssueAlgorithmECDSA() IssueOption {
 // OptIssueAlgorithmRSA configures the certificate to use 2048-bits RSA with SHA384 signature
 func OptIssueAlgorithmRSA() IssueOption {
 	return func(cfg *issueCfg) {
-		OptIssueKeyGenerator(RSAPrivateKeyGenerator)(cfg)
+		OptIssueKeyGenerator(rsaPrivateKeyGenerator)(cfg)
 		OptIssueSignatureAlgorithm(x509.SHA384WithRSA)(cfg)
 		OptIssuePublicKeyAlgorithm(x509.RSA)(cfg)
 	}

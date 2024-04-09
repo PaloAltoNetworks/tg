@@ -12,7 +12,7 @@
 package tgnoob
 
 import (
-	"io/ioutil"
+	"os"
 	"time"
 )
 
@@ -27,7 +27,7 @@ func CreateCA(
 	var err error
 
 	if out == "" {
-		if out, err = ioutil.TempDir("", "certificates"); err != nil {
+		if out, err = os.MkdirTemp("", "certificates"); err != nil {
 			return "", "", err
 		}
 	}
@@ -84,7 +84,7 @@ func CreateSignedCA(
 	var err error
 
 	if out == "" {
-		if out, err = ioutil.TempDir("", "certificates"); err != nil {
+		if out, err = os.MkdirTemp("", "certificates"); err != nil {
 			return "", "", err
 		}
 	}
@@ -143,7 +143,7 @@ func CreateClientCertificate(
 	var err error
 
 	if out == "" {
-		if out, err = ioutil.TempDir("", "certificates"); err != nil {
+		if out, err = os.MkdirTemp("", "certificates"); err != nil {
 			return "", "", err
 		}
 	}
@@ -201,7 +201,7 @@ func CreateServerCertificate(
 	var err error
 
 	if out == "" {
-		if out, err = ioutil.TempDir("", "certificates"); err != nil {
+		if out, err = os.MkdirTemp("", "certificates"); err != nil {
 			return "", "", err
 		}
 	}

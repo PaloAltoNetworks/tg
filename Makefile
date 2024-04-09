@@ -3,7 +3,10 @@ SHELL := /bin/bash -o pipefail
 
 export GO111MODULE = on
 
-default: lint test
+default: test
+
+test:
+	go test ./... -race -cover -covermode=atomic -coverprofile=unit_coverage.out
 
 lint:
 	golangci-lint run \
@@ -22,10 +25,8 @@ lint:
 		--enable=prealloc \
 		--enable=nakedret \
 		--enable=unparam \
+		--enable=typecheck \
 		./...
-
-test:
-	go test ./... -race -cover -covermode=atomic -coverprofile=unit_coverage.out
 
 sec:
 	# gosec -quiet -exclude=G304 ./...

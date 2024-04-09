@@ -19,8 +19,8 @@ jobs:
       fail-fast: false
       matrix:
         go:
-          - "1.20"
-          - "1.21"
+          - "1.22"
+
     steps:
       - uses: actions/checkout@v3
 
@@ -29,9 +29,26 @@ jobs:
           go-version: ${{ matrix.go }}
           cache: true
 
-      - name: setup
-        run: |
-          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          args: >
+            --disable-all
+            --exclude-use-default=false
+            --exclude=package-comments
+            --exclude=unused-parameter
+            --enable=errcheck
+            --enable=goimports
+            --enable=ineffassign
+            --enable=revive
+            --enable=unused
+            --enable=staticcheck
+            --enable=unconvert
+            --enable=misspell
+            --enable=prealloc
+            --enable=nakedret
+            --enable=unparam
+            --enable=typecheck
 
       - name: build
         run: |
