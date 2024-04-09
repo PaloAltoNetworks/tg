@@ -35,6 +35,12 @@ func RSAPrivateKeyGenerator() (crypto.PrivateKey, error) {
 	return rsa.GenerateKey(rand.Reader, 2048)
 }
 
+// to ease unit testing
+var (
+	ecPrivateKeyGenerator  = ECPrivateKeyGenerator
+	rsaPrivateKeyGenerator = RSAPrivateKeyGenerator
+)
+
 // KeyToPEM converts the given crypto.PrivateKey to *pem.Block .
 func KeyToPEM(key interface{}) (*pem.Block, error) {
 
