@@ -15,6 +15,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/asn1"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"net"
@@ -54,6 +55,7 @@ func GenerateCertificate(
 	orgUnit []string,
 	dns []string,
 	ips []string,
+	tags []string,
 	duration time.Duration,
 	policies []string,
 ) error {
@@ -127,6 +129,17 @@ func GenerateCertificate(
 		netips[i] = net.ParseIP(ip)
 	}
 	options = append(options, tglib.OptIssueIPSANs(netips...))
+
+	tagsj, err := json.Marshal(tags)
+	if err != nil {
+		return fmt.Errorf("unable to process tags: %s", err.Error())
+	}
+	options = append(options, tglib.OptIssueExtraExtensions([]pkix.Extension{
+		{
+			Id:    asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 50798, 1, 1},
+			Value: tagsj,
+		},
+	}))
 
 	asnIdentifiers, err := makePolicies(policies)
 	if err != nil {
