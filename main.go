@@ -207,6 +207,9 @@ func generateCertificate() {
 	}
 
 	log.Printf("certificate key pair created: cert: %s-cert.pem, key: %s-key.pem", viper.GetString("name"), viper.GetString("name"))
+	if viper.GetBool("p12") {
+		log.Printf("p12 bundle created: %s.p12", viper.GetString("name"))
+	}
 }
 
 func generateCSR() {
