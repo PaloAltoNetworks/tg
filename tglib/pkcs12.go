@@ -12,28 +12,51 @@
 package tglib
 
 import (
+	"bytes"
+	"context"
 	"encoding/base64"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 // GeneratePKCS12FromFiles generates a full PKCS certificate based on the input keys.
 func GeneratePKCS12FromFiles(out, certPath, keyPath, caPath, passphrase string) error {
 
-	/* #nosec */
-	return exec.Command(
-		"openssl",
+	var errb bytes.Buffer
+
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	// TODO for pkcs12 file without encryption use: -keypbe NONE -certpbe NONE -nomaciter
+	const command = "openssl"
+	args := append(make([]string, 0, 15),
 		"pkcs12",
 		"-export",
 		"-out", out,
 		"-inkey", keyPath,
 		"-in", certPath,
-		"-certfile", caPath,
 		"-passout", "pass:"+passphrase,
-	).Run()
+	)
+	if len(caPath) > 0 {
+		args = append(args, "-certfile", caPath)
+	}
+
+	// #nosec G204 audited OK - no command injection can occur here
+	cmd := exec.CommandContext(ctx, command, args...)
+	cmd.Stderr = &errb
+	cmd.WaitDelay = 5 * time.Second
+
+	err := cmd.Run()
+	if err != nil {
+		// include the openssl stderr output to aid in debugging the reason for failure
+		err = fmt.Errorf("exec openssl failed: stderr='%s': %w", strings.TrimSpace(errb.String()), err)
+	}
+
+	return err
 }
 
 // GeneratePKCS12 generates a pkcs12
