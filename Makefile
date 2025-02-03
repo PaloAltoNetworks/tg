@@ -30,3 +30,10 @@ lint:
 
 sec:
 	# gosec -quiet -exclude=G304 ./...
+
+upgrade-deps:
+	go get -u github.com/smartystreets/goconvey@latest
+	go get -u github.com/spf13/cobra@latest
+	go get -u github.com/spf13/viper@latest
+	go get -u golang.org/x/term@latest
+	go mod tidy
