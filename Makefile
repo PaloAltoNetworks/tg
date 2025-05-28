@@ -31,7 +31,7 @@ lint:
 sec:
 	# gosec -quiet -exclude=G304 ./...
 
-upgrade-deps:
+update-deps:
 	go get -u github.com/smartystreets/goconvey@latest
 	go get -u github.com/spf13/cobra@latest
 	go get -u github.com/spf13/viper@latest
