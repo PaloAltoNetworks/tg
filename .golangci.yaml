@@ -77,12 +77,7 @@ linters:
         - name: unnecessary-format
           disabled: true
 
-  exclusions:
-    paths: data_test.go
-
 formatters:
-  default: none
-
   enable:
     - goimports
 
