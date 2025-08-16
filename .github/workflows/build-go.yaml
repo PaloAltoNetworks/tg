@@ -31,24 +31,6 @@ jobs:
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v8.0.0
-        with:
-          args: >
-            --disable-all
-            --exclude-use-default=false
-            --exclude=package-comments
-            --exclude=unused-parameter
-            --enable=errcheck
-            --enable=goimports
-            --enable=ineffassign
-            --enable=revive
-            --enable=unused
-            --enable=staticcheck
-            --enable=unconvert
-            --enable=misspell
-            --enable=prealloc
-            --enable=nakedret
-            --enable=unparam
-            --enable=typecheck
 
       - name: build
         run: |
