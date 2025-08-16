@@ -42,7 +42,7 @@ var (
 )
 
 // KeyToPEM converts the given crypto.PrivateKey to *pem.Block .
-func KeyToPEM(key interface{}) (*pem.Block, error) {
+func KeyToPEM(key any) (*pem.Block, error) {
 
 	var err error
 	var b []byte
@@ -88,12 +88,12 @@ func PEMToKey(keyBlock *pem.Block) (crypto.PrivateKey, error) {
 // DecryptPrivateKey decrypts the given private key
 func DecryptPrivateKey(keyBlock *pem.Block, password string) (*pem.Block, error) {
 
-	if !x509.IsEncryptedPEMBlock(keyBlock) { //nolint: staticcheck // This is deprecated but Go does not provide any alternative yet
+	if !x509.IsEncryptedPEMBlock(keyBlock) { // nolint: staticcheck // This is deprecated but Go does not provide any alternative yet
 		return keyBlock, nil
 	}
 
 	var data []byte
-	data, err := x509.DecryptPEMBlock(keyBlock, []byte(password)) //nolint: staticcheck // This is deprecated but Go does not provide any alternative yet
+	data, err := x509.DecryptPEMBlock(keyBlock, []byte(password)) // nolint: staticcheck // This is deprecated but Go does not provide any alternative yet
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func DecryptPrivateKeyPEM(key []byte, password string) (*pem.Block, error) {
 // EncryptPrivateKey encrypts the given private key
 func EncryptPrivateKey(keyBlock *pem.Block, password string) (*pem.Block, error) {
 
-	//nolint: staticcheck // This is deprecated but Go does not provide any alternative yet
+	// nolint: staticcheck // This is deprecated but Go does not provide any alternative yet
 	return x509.EncryptPEMBlock(rand.Reader, keyBlock.Type, keyBlock.Bytes, []byte(password), x509.PEMCipherAES256)
 }
 
