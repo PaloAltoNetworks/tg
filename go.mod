@@ -1,6 +1,6 @@
 module go.aporeto.io/tg
 
-go 1.24
+go 1.25
 
 require (
 	github.com/smartystreets/goconvey v1.8.1
