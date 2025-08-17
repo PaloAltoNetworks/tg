@@ -94,6 +94,7 @@ func GenerateCertificate(
 		options = append(options, tglib.OptIssueAlgorithmECDSA())
 	case algoRSA:
 		options = append(options, tglib.OptIssueAlgorithmRSA())
+	default:
 	}
 
 	if isCA {
@@ -280,6 +281,7 @@ func GenerateCSR(
 			keygen = tglib.RSAPrivateKeyGenerator
 			signalg = x509.SHA384WithRSA
 			pkalg = x509.RSA
+		default:
 		}
 
 		privateKey, err := keygen()
@@ -428,6 +430,7 @@ func SignCSR(
 	case algoRSA:
 		signalg = x509.SHA384WithRSA
 		pkalg = x509.RSA
+	default:
 	}
 
 	var keyUsage x509.KeyUsage
@@ -455,15 +458,15 @@ func SignCSR(
 		return err
 	}
 
-	for _, path := range csr {
+	for _, mypath := range csr {
 
-		csrData, err := os.ReadFile(path)
+		csrData, err := os.ReadFile(mypath)
 		if err != nil {
-			return fmt.Errorf("unable to load csr %s", path)
+			return fmt.Errorf("unable to load csr %s", mypath)
 		}
 		csrs, err := tglib.LoadCSRs(csrData)
 		if err != nil {
-			return fmt.Errorf("unable to parse csr %s", path)
+			return fmt.Errorf("unable to parse csr %s", mypath)
 		}
 
 		for _, csr := range csrs {
